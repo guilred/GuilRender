@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.4.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<UpToDateCheckInput Include="Effects/guilbatch-effect.fx" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Effects/guilbatch-effect.mgfx">
+			<LogicalName>GuilBatch.guilbatch-effect.mgfx</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<Target Name="RestoreTools" BeforeTargets="CompileShaders">
+		<Exec Command="dotnet tool restore" />
+	</Target>
+
+	<Target Name="CompileShaders" BeforeTargets="BeforeBuild" DependsOnTargets="RestoreTools" Inputs="Effects/guilbatch-effect.fx" Outputs="Effects/guilbatch-effect.mgfx">
+		<Message Importance="High" Text="&gt; Compiling GuilBatch Shader..." />
+		<Exec Command="dotnet tool run mgfxc Effects/guilbatch-effect.fx Effects/guilbatch-effect.mgfx /Profile:OpenGL" />
+	</Target>
+
+</Project>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="GuilRender/GuilRender.csproj" />
+  <Project Path="GuilRenderTests/GuilRenderTests.csproj" />
+</Solution>
