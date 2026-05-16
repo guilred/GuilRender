@@ -513,7 +513,7 @@ public sealed class GuilFont : IDisposable {
                         var drawPos = new Vector2(currX, currY);
                         if (rotation != 0) drawPos.RotateAround(position, rotation);
 
-                        var charPaint = perCharColor is null ? paint : perCharColor[start + i][j];
+                        var charPaint = perCharColor is null ? paint : perCharColor[j][start + i];
 
                         batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, enableAA: false);
                         currX += charWidth;
