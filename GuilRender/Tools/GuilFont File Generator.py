@@ -87,9 +87,14 @@ def generate_atlas_at_size(font_path, size, chars, monospace=False):
     for c in valid_chars:
         sf = chars_surfaces[c]
         cropped = x_cut(sf)
-        cropped = cropped.subsurface((0, min_y, cropped.get_width(), max_y - min_y)).copy()
+    
+        if cropped.get_width() == 0 or cropped.get_height() == 0:
+            continue  # skip degenerate surfaces entirely
+    
+        sub_h = min(max_y - min_y + 1, cropped.get_height() - min_y)  # clamp to surface bounds
+        cropped = cropped.subsurface((0, min_y, cropped.get_width(), sub_h)).copy()
         cropped_chars_surfaces[c] = cropped
-        
+    
         if cropped.get_width() > max_char_width:
             max_char_width = cropped.get_width()
     
@@ -101,7 +106,7 @@ def generate_atlas_at_size(font_path, size, chars, monospace=False):
     total_width = sum(char_widths[c] for c in valid_chars)
     total_width += ATLAS_GAP * (len(valid_chars) - 1)
 
-    height = max_y - min_y
+    height = max_y - min_y + 1
     
     atlas = pg.Surface((total_width, height), pg.SRCALPHA)
     atlas.fill(TRANSPARENT)
