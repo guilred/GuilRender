@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Guilred.Rendering;
 
@@ -399,7 +400,8 @@ public sealed class GuilFont : IDisposable {
 
     public void DrawStringWrapped(GuilBatch batch, ReadOnlySpan<char> text, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, float rotation = 0, List<Paint>? perCharColor = null, XAlignment xAlignment = XAlignment.Left, YAlignment yAlignment = YAlignment.Top) {
         wrapX = float.Max(position.X, wrapX);
-        if (text.Length == 0) return;
+        if (text.Length == 0 || wrapX == position.X) return;
+        var goalWidth = wrapX - position.X;
 
         var ctx = new FontContext(this, height, spacing, lineSpacing);
         var slice = text.Slice(index ?? 0, length ?? text.Length);
@@ -430,8 +432,8 @@ public sealed class GuilFont : IDisposable {
                 var lineWidth = MeasureString(visibleLine, height, spacing, null).X;
 
                 var currX = position.X;
-                if (xAlignment == XAlignment.Middle) currX += (wrapX - position.X - lineWidth) * 0.5f;
-                else if (xAlignment == XAlignment.Right) currX -= lineWidth;
+                if (xAlignment == XAlignment.Middle) currX += (wrapX - position.X - lineWidth) * 0.5f + goalWidth / 2;
+                else if (xAlignment == XAlignment.Right) currX -= lineWidth - goalWidth;
 
                 for (var i = 0; i < subLine.Length; i++) {
                     var c = subLine[i];
@@ -464,8 +466,9 @@ public sealed class GuilFont : IDisposable {
     }
 
     public void DrawStringWrapped(GuilBatch batch, List<List<char>> lines, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, int? lastLineIndex = null, int? length = null, float rotation = 0, List<List<Paint>>? perCharColor = null, XAlignment xAlignment = XAlignment.Left, YAlignment yAlignment = YAlignment.Top) {
-        if (wrapX < position.X) throw new ArgumentException("WrapX must be greater than or equal to position.X");
-        if (lines.Count == 0) return;
+        wrapX = float.Max(position.X, wrapX);
+        if (wrapX == position.X) return;
+        var goalWidth = wrapX - position.X;
 
         var ctx = new FontContext(this, height, spacing, lineSpacing);
         var totalSize = MeasureStringWrapped(lines, height, position.X, wrapX, spacing, lineSpacing, lastLineIndex, length);
@@ -496,8 +499,8 @@ public sealed class GuilFont : IDisposable {
                 var lineWidth = MeasureString(visibleLine, height, spacing, null).X;
 
                 var currX = position.X;
-                if (xAlignment == XAlignment.Middle) currX += (wrapX - position.X - lineWidth) * 0.5f;
-                else if (xAlignment == XAlignment.Right) currX -= lineWidth;
+                if (xAlignment == XAlignment.Middle) currX += (wrapX - position.X - lineWidth) * 0.5f + goalWidth / 2;
+                else if (xAlignment == XAlignment.Right) currX -= lineWidth - goalWidth;
 
                 for (var i = 0; i < subLine.Length; i++) {
                     var c = subLine[i];
@@ -616,9 +619,11 @@ public sealed class GuilFont : IDisposable {
     }
 
     public (int col, int ln) GetIndexAtWrapped(ReadOnlySpan<char> text, Vector2 position, Vector2 clickPos, float height, float wrapX, float? spacing = null, float? lineSpacing = null, XAlignment xAlignment = XAlignment.Left, YAlignment yAlignment = YAlignment.Top) {
-        if (text.IsEmpty) return (0, 0);
-        var ctx = new FontContext(this, height, spacing, lineSpacing);
+        wrapX = float.Max(position.X, wrapX);
+        if (text.Length == 0 || wrapX == position.X) return default;
+        var goalWidth = wrapX - position.X;
 
+        var ctx = new FontContext(this, height, spacing, lineSpacing);
         var totalSize = MeasureStringWrapped(text, height, position.X, wrapX, spacing, lineSpacing);
         var startY = position.Y;
         if (yAlignment == YAlignment.Middle) startY -= totalSize.Y * 0.5f;
@@ -653,8 +658,8 @@ public sealed class GuilFont : IDisposable {
                     var visibleLine = subLine.EndsWith(" ") && !subLine.EndsWith("  ") ? subLine.TrimEnd(' ') : subLine;
                     var lineWidth = MeasureString(visibleLine, height, spacing, null).X;
                     var lineStartX = position.X;
-                    if (xAlignment == XAlignment.Middle) lineStartX += (wrapX - position.X - lineWidth) * 0.5f;
-                    else if (xAlignment == XAlignment.Right) lineStartX -= lineWidth;
+                    if (xAlignment == XAlignment.Middle) lineStartX += (wrapX - position.X - lineWidth) * 0.5f + goalWidth / 2;
+                    else if (xAlignment == XAlignment.Right) lineStartX -= lineWidth - goalWidth;
 
                     var col = segStart + GetIndexAt(subLine, lineStartX, clickPos.X, height, spacing);
                     return (col, j);
@@ -671,9 +676,11 @@ public sealed class GuilFont : IDisposable {
     }
 
     public Vector2 GetPositionAtWrapped(ReadOnlySpan<char> text, Vector2 position, (int col, int ln) index, float height, float wrapX, float? spacing = null, float? lineSpacing = null, XAlignment xAlignment = XAlignment.Left, YAlignment yAlignment = YAlignment.Top) {
-        if (text.IsEmpty) return Vector2.Zero;
-        var ctx = new FontContext(this, height, spacing, lineSpacing);
+        wrapX = float.Max(position.X, wrapX);
+        if (text.Length == 0 || wrapX == position.X) return Vector2.Zero;
+        var goalWidth = wrapX - position.X;
 
+        var ctx = new FontContext(this, height, spacing, lineSpacing);
         var lineCount = 1;
         foreach (var c in text) if (c == '\n') lineCount++;
         index.ln = int.Clamp(index.ln, 0, lineCount - 1);
@@ -725,17 +732,19 @@ public sealed class GuilFont : IDisposable {
         var visibleLine = subLine.EndsWith(" ") && !subLine.EndsWith("  ") ? subLine.TrimEnd(' ') : subLine;
         var lineWidth = MeasureString(visibleLine, height, spacing, null).X;
         var currX = position.X;
-        if (xAlignment == XAlignment.Middle) currX += (wrapX - position.X - lineWidth) * 0.5f;
-        else if (xAlignment == XAlignment.Right) currX -= lineWidth;
+        if (xAlignment == XAlignment.Middle) currX += (wrapX - position.X - lineWidth) * 0.5f + goalWidth / 2;
+        else if (xAlignment == XAlignment.Right) currX -= lineWidth - goalWidth;
 
         currX += MeasureString(targetLineSpan, height, spacing, null, segStart, index.col - segStart).X;
         return new Vector2(currX + ctx.Spacing / 2, currY);
     }
 
     public Vector2 GetPositionAtWrapped(List<List<char>> lines, Vector2 position, (int col, int ln) index, float height, float wrapX, float? spacing = null, float? lineSpacing = null, XAlignment xAlignment = XAlignment.Left, YAlignment yAlignment = YAlignment.Top) {
-        if (lines.Count == 0) return Vector2.Zero;
-        var ctx = new FontContext(this, height, spacing, lineSpacing);
+        wrapX = float.Max(position.X, wrapX);
+        if (lines.Count == 0 || wrapX == position.X) return Vector2.Zero;
+        var goalWidth = wrapX - position.X;
 
+        var ctx = new FontContext(this, height, spacing, lineSpacing);
         index.ln = int.Clamp(index.ln, 0, lines.Count - 1);
         index.col = int.Clamp(index.col, 0, lines[index.ln].Count);
 
@@ -770,14 +779,18 @@ public sealed class GuilFont : IDisposable {
 
         var visibleLine = subLine.EndsWith(" ") && !subLine.EndsWith("  ") ? subLine.TrimEnd(" ") : subLine;
         var lineWidth = MeasureString(visibleLine, height, spacing, null).X; var currX = position.X;
-        if (xAlignment == XAlignment.Middle) currX += (wrapX - position.X - lineWidth) * 0.5f;
-        else if (xAlignment == XAlignment.Right) currX -= lineWidth;
+        if (xAlignment == XAlignment.Middle) currX += (wrapX - position.X - lineWidth) * 0.5f + goalWidth / 2;
+        else if (xAlignment == XAlignment.Right) currX -= lineWidth - goalWidth;
 
         currX += MeasureString(span, height, spacing, null, segStart, index.col - segStart).X;
         return new Vector2(currX + (index.col > 0 ? ctx.Spacing / 2 : -ctx.Spacing / 2), currY);
     }
 
     public void IterateSelectionRects(List<List<char>> lines, Vector2 position, float height, float wrapX, (int col, int ln) start, (int col, int ln) end, Action<RectangleF>? onRect = null, float padding = 0, float? spacing = null, float? lineSpacing = null, XAlignment xAlignment = XAlignment.Left) {
+        wrapX = float.Max(position.X, wrapX);
+        if (lines.Count == 0 || wrapX == position.X) return;
+        var goalWidth = wrapX - position.X;
+
         var ctx = new FontContext(this, height, spacing, lineSpacing);
         var visualLine = 0;
 
@@ -798,8 +811,8 @@ public sealed class GuilFont : IDisposable {
                     var lineWidth = MeasureString(subLine, height, spacing, null).X;
 
                     var lineStartX = position.X;
-                    if (xAlignment == XAlignment.Middle) lineStartX += (wrapX - position.X - lineWidth) * 0.5f;
-                    else if (xAlignment == XAlignment.Right) lineStartX -= lineWidth;
+                    if (xAlignment == XAlignment.Middle) lineStartX += (wrapX - position.X - lineWidth) * 0.5f + goalWidth / 2;
+                    else if (xAlignment == XAlignment.Right) lineStartX -= lineWidth - goalWidth;
 
                     var x1 = lineStartX + ((j == start.ln && start.col > subStart)
                         ? MeasureString(span, height, spacing, null, subStart, start.col - subStart).X + ctx.Spacing / 2
