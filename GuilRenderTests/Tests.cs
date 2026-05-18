@@ -5,9 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace GuilRenderTests;
 
@@ -28,8 +26,6 @@ public class Tests : Game {
 
     protected override void Initialize() {
         (_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight) = (1600, 900);
-        _graphics.SynchronizeWithVerticalRetrace = false;
-        IsFixedTimeStep = false;
         _graphics.ApplyChanges();
 
         base.Initialize();
@@ -38,7 +34,7 @@ public class Tests : Game {
     protected override void LoadContent() {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _guilBatch = new GuilBatch(GraphicsDevice);
-        _guilFont = new GuilFont(GraphicsDevice, "Content/FreckleFace.guif");
+        _guilFont = new GuilFont(GraphicsDevice, _guilBatch, "Content/FreckleFace.guif");
         _mg = Content.Load<Texture2D>("mg");
         _gr = Content.Load<Texture2D>("gr");
         _dg = Content.Load<Texture2D>("doggo");
@@ -64,8 +60,7 @@ public class Tests : Game {
                 text,
                 screenSize / 2, mpos, 30,
                 screenSize.X / 2 + 300,
-                xAlignment: XAlignment.Middle,
-                yAlignment: YAlignment.Middle
+                alignment: Alignment.Centered
             );
         }
 
@@ -190,25 +185,24 @@ public class Tests : Game {
             var textP = Paint.Linear(Vector2.Zero, Vector2.UnitY, Color.Yellow, Color.Red);
 
 
-            _guilBatch.PushClip(clipRect, 50, clipRot);
+            //_guilBatch.PushClip(clipRect, 50, clipRot);
             _guilFont.DrawStringWrapped(
                 _guilBatch,
                 text,
                 screenSize / 2,
                 textP, textSize, wrapX,
-                xAlignment: XAlignment.Middle,
-                yAlignment: YAlignment.Middle
+                alignment: Alignment.Centered
             );
 
             var clickPos = _guilFont.GetPositionAtWrapped(
                 text, screenSize / 2,
                 _lastClickIndex,
                 textSize, wrapX,
-                xAlignment: XAlignment.Middle,
-                yAlignment: YAlignment.Middle
+                alignment: Alignment.Centered
             );
             _guilBatch.FillLine(clickPos, clickPos + Vector2.UnitY * 30, Color.Red, 1);
-            _guilBatch.PopClip();
+            _guilBatch.FillCircle(screenSize / 2, Color.Red, 4);
+            //_guilBatch.PopClip();
 
             _guilBatch.End(); // ONE SINGLE DRAW CALL
         }
