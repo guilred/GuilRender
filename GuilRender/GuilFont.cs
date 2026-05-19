@@ -83,7 +83,7 @@ public sealed class GuilFont : IDisposable {
             graphics.Clear(Color.Transparent);
             batch.Begin(blendState: BlendState.NonPremultiplied);
             foreach (var g in packedGlyphs)
-                batch.DrawTexture(g.stripTex, new Vector2(g.x, g.y), new Rectangle(g.sx, 0, g.w, g.stripH), Color.White, enableAA: false);
+                batch.DrawTexture(g.stripTex, new Vector2(g.x, g.y), new Rectangle(g.sx, 0, g.w, g.stripH), Color.White, aaSize: 0);
             batch.End();
             graphics.SetRenderTarget(null);
             MegaAtlas = renderTarget;
@@ -247,7 +247,7 @@ public sealed class GuilFont : IDisposable {
                     var charPaint = paint;
                     if (perCharColor is not null) charPaint = perCharColor[globalIndex + i];
 
-                    batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, enableAA: false);
+                    batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                     currX += charWidth;
                 }
             }
@@ -431,7 +431,7 @@ public sealed class GuilFont : IDisposable {
                         var charPaint = paint;
                         if (perCharColor is not null) charPaint = perCharColor[globalIndex + start + i];
 
-                        batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, enableAA: false);
+                        batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                         currX += charWidth;
                     }
                 }
@@ -496,7 +496,7 @@ public sealed class GuilFont : IDisposable {
 
                         var charPaint = perCharColor is null ? paint : perCharColor[j][start + i];
 
-                        batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, enableAA: false);
+                        batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                         currX += charWidth;
                     }
                 }

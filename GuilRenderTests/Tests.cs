@@ -69,7 +69,7 @@ public class Tests : Game {
     protected override void Draw(GameTime gameTime) {
         if (!IsActive) return;
 
-        int SCENE = 0;
+        int SCENE = 2;
         float time = (float)gameTime.TotalGameTime.TotalSeconds;
         var wave = float.Pow(float.Sin(time * 0.25f * float.Pi), 2);
         var mpos = Mouse.GetState().Position.ToVector2();
@@ -217,21 +217,21 @@ public class Tests : Game {
             var pos = new Vector2(200, 200);
             var size = new Vector2(500, 400);
 
-            var ps = Paint.Linear(Vector2.Zero, Vector2.UnitX, Color.Blue, Color.Magenta) * squiWave;
-            var ps2 = Paint.Linear(Vector2.UnitY * 0.5f, Vector2.UnitY * 0.5f + Vector2.UnitX, Color.Green, Color.Red).SetOffsets(0.5f, 0.5f) * squiWave;
+            var ps = Paint.Linear(Vector2.Zero, Vector2.UnitX, Color.Blue, Color.Magenta) * 1;
+            var ps2 = Paint.Linear(Vector2.UnitY * 0.5f, Vector2.UnitY * 0.5f + Vector2.UnitX, Color.Green, Color.Red).SetOffsets(0.5f, 0.5f) * 1;
 
             /*_guilBatch.DrawRectangle(pos, size, ps, ps2, 10, 40);
             _guilBatch.DrawCircle(pos + size / 2, ps, ps2, size.X / 2, 0);
             _guilBatch.DrawLine(pos, pos + size, ps, ps2, 50, 10);
             _guilBatch.DrawTexture(_dg, pos, size, null, ps * 0.1f, rounding: 40);*/
-            _guilBatch.DrawArc(pos + size / 2, ps, ps2, size.X / 2 - 80, 80, float.Pi * 0.95f, float.Pi * 1.05f, 10);
+            _guilBatch.DrawArc(pos + size / 2, ps, ps2, size.X / 2 - 80, 80, float.Pi * 2 * 0.02f, float.Pi * 2 * 0.98f, 10);
 
             _guilBatch.End();
         }
 
         GraphicsDevice.SetRenderTarget(null);
 
-        var zoomPos = mpos;// Vector2.One * 80 + Vector2.One * 300 - Vector2.UnitX * 400;
+        var zoomPos = Vector2.One * 80 + Vector2.One * 300 - Vector2.UnitX * 0;
         var zoomMat = _zoomed ? Matrix.CreateTranslation(-zoomPos.X, -zoomPos.Y, 0) * Matrix.CreateScale(4) * Matrix.CreateTranslation(zoomPos.X, zoomPos.Y, 0) : Matrix.Identity;
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: zoomMat);
         _spriteBatch.Draw(_mid, _mid.Bounds, Color.White);

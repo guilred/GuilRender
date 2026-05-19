@@ -232,6 +232,12 @@ public struct RectangleF : IEquatable<RectangleF> {
         _width += amount * 2;
         _height += amount * 2;
     }
+    public void Inflate(Vector2 amount) {
+        _x -= amount.X;
+        _y -= amount.X;
+        _width += amount.X * 2;
+        _height += amount.X * 2;
+    }
     public void Offset(Point amount) {
         _x += amount.X;
         _y += amount.Y;

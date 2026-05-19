@@ -1,5 +1,7 @@
 <Solution>
-  <Project Path="../GuilUI/GuilUI/GuilUI.csproj" />
+  <Project Path="../GuilUI/GuilUI/GuilUI.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
   <Project Path="GuilRender/GuilRender.csproj" />
   <Project Path="GuilRenderTests/GuilRenderTests.csproj" />
 </Solution>
