@@ -59,7 +59,6 @@ public class GuilBatch {
         _vertexBuffer = new DynamicVertexBuffer(device, PrimitiveVertex.VertexDeclaration, _maxVertices, BufferUsage.WriteOnly);
         _indexBuffer = new DynamicIndexBuffer(device, IndexElementSize.SixteenBits, _maxIndices, BufferUsage.WriteOnly);
     }
-
     public void Begin(Matrix? view = null, Matrix? projection = null, BlendState? blendState = null, SamplerState? samplerState = null, float? clipSmoothing = null) {
         if (_begun) throw new InvalidOperationException("DioBatch is already begun.");
 
@@ -75,9 +74,11 @@ public class GuilBatch {
         d_time += 1 / 60f;
         _currentClip = new ClipState { Rect = new(0, 0, -1, 0), Params = Vector2.Zero };
     }
-
-    public void End(bool maintainClipRects = false) {
+    private void ensureBegun() {
         if (!_begun) throw new InvalidOperationException("DioBatch has not been begun.");
+    }
+    public void End(bool maintainClipRects = false) {
+        ensureBegun();
 
         flush();
         _begun = false;
@@ -295,6 +296,7 @@ public class GuilBatch {
         }
     }
     public void DrawRectangle(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rounding, float rotation = 0f, Vector2 origin = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+        ensureBegun();
         if (size.X <= 0 || size.Y <= 0) return;
 
         float minHalf = float.Min(size.X, size.Y) * 0.5f;
@@ -432,6 +434,7 @@ public class GuilBatch {
         => BorderRectangle(position, size, Paint.Solid(borderColor), borderThickness, rounding, rotation, origin, cornerQuality, aaSize);
 
     public void DrawLine(Vector2 start, Vector2 end, Paint fillPaint, Paint borderPaint, float thickness, float borderThickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f) {
+        ensureBegun();
         if (thickness <= 0) return;
 
         Vector2 dir = end - start;
@@ -505,6 +508,7 @@ public class GuilBatch {
         }
     }
     public void DrawArc(Vector2 center, Paint fillPaint, Paint borderPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
+        ensureBegun();
         static float normalizeAngle(float angle) => ((angle % float.Tau) + float.Tau) % float.Tau;
 
         startAngle = normalizeAngle(startAngle);
@@ -603,6 +607,7 @@ public class GuilBatch {
         => BorderArc(center, Paint.Solid(borderColor), innerRadius, outerRadius, startAngle, endAngle, borderThickness, quality, aaSize);
 
     public void DrawCircle(Vector2 center, Paint fillPaint, Paint borderPaint, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
+        ensureBegun();
         var segments = computeSegments(radius, quality: quality);
         float innerRadius = Math.Max(0, radius - borderThickness);
 
@@ -762,6 +767,7 @@ public class GuilBatch {
         }
     }
     public void DrawTexture(Texture2D texture, Vector2 position, Vector2? size = null, Rectangle? sourceRect = null, Paint? tint = null, float rotation = 0f, Vector2 origin = default, SpriteEffects effects = SpriteEffects.None, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+        ensureBegun();
         Vector2 actualSize = size ?? new Vector2(texture.Width, texture.Height);
         if (actualSize.X <= 0 || actualSize.Y <= 0) return;
 
