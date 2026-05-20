@@ -32,6 +32,7 @@ public class GuilBatch {
     private int _indexCount;
 
     private bool _begun;
+    private float _cameraZoom;
 
     // debugging
     private double d_time;
@@ -60,11 +61,14 @@ public class GuilBatch {
         _indexBuffer = new DynamicIndexBuffer(device, IndexElementSize.SixteenBits, _maxIndices, BufferUsage.WriteOnly);
     }
     public void Begin(Matrix? view = null, Matrix? projection = null, BlendState? blendState = null, SamplerState? samplerState = null, float? clipSmoothing = null) {
-        if (_begun) throw new InvalidOperationException("DioBatch is already begun.");
+        if (_begun) throw new InvalidOperationException("Guilbatch is already begun.");
 
-        projection = (view ?? Matrix.Identity) * (projection ?? Matrix.CreateOrthographicOffCenter(0, _device.Viewport.Width, _device.Viewport.Height, 0, 0f, 1f));
 
-        _projectionParam.SetValue(projection.Value);
+        var currentView = view ?? Matrix.Identity;
+        _cameraZoom = new Vector3(currentView.M11, currentView.M12, currentView.M13).Length();
+        Matrix finalProj = currentView * (projection ?? Matrix.CreateOrthographicOffCenter(0, _device.Viewport.Width, _device.Viewport.Height, 0, 0f, 1f));
+
+        _projectionParam.SetValue(finalProj);
         _clipSmoothingParam.SetValue(clipSmoothing ?? 0.5f);
         _vertexCount = 0;
         _indexCount = 0;
@@ -75,7 +79,7 @@ public class GuilBatch {
         _currentClip = new ClipState { Rect = new(0, 0, -1, 0), Params = Vector2.Zero };
     }
     private void ensureBegun() {
-        if (!_begun) throw new InvalidOperationException("DioBatch has not been begun.");
+        if (!_begun) throw new InvalidOperationException("Guilbatch has not been begun.");
     }
     public void End(bool maintainClipRects = false) {
         ensureBegun();
@@ -150,10 +154,10 @@ public class GuilBatch {
         Vector4 newRect = new(clipRect.Position.X, clipRect.Position.Y, clipRect.Width, clipRect.Height);
 
         if (intersect && _clipStack.Count > 0 && _currentClip.Rect.Z > 0 && _currentClip.Rect.W > 0) {
-            float x1 = Math.Max(_currentClip.Rect.X, newRect.X);
-            float y1 = Math.Max(_currentClip.Rect.Y, newRect.Y);
-            float x2 = Math.Min(_currentClip.Rect.X + _currentClip.Rect.Z, newRect.X + newRect.Z);
-            float y2 = Math.Min(_currentClip.Rect.Y + _currentClip.Rect.W, newRect.Y + newRect.W);
+            float x1 = float.Max(_currentClip.Rect.X, newRect.X);
+            float y1 = float.Max(_currentClip.Rect.Y, newRect.Y);
+            float x2 = float.Min(_currentClip.Rect.X + _currentClip.Rect.Z, newRect.X + newRect.Z);
+            float y2 = float.Min(_currentClip.Rect.Y + _currentClip.Rect.W, newRect.Y + newRect.W);
 
             if (x2 >= x1 && y2 >= y1) {
                 newRect = new Vector4(x1, y1, x2 - x1, y2 - y1);
@@ -300,8 +304,8 @@ public class GuilBatch {
         if (size.X <= 0 || size.Y <= 0) return;
 
         float minHalf = float.Min(size.X, size.Y) * 0.5f;
-        rounding = Math.Clamp(rounding, 0f, minHalf);
-        borderThickness = Math.Clamp(borderThickness, 0f, minHalf);
+        rounding = float.Clamp(rounding, 0f, minHalf);
+        borderThickness = float.Clamp(borderThickness, 0f, minHalf);
 
         borderPaint = transformPaint(borderPaint, position + origin, -origin, rotation, size);
         var padding = Vector2.One * borderThickness;
@@ -405,6 +409,7 @@ public class GuilBatch {
         }
 
         if (aaSize == 0f) return;
+        aaSize /= _cameraZoom;
 
         Vector2 aaPivot = position + origin;
 
@@ -469,11 +474,10 @@ public class GuilBatch {
     public void BorderLine(Vector2 start, Vector2 end, Color borderColor, float thickness, float borderThickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f)
         => BorderLine(start, end, Paint.Solid(borderColor), thickness, borderThickness, capQuality, aaSize);
 
-    private void addCircleFringe(Vector2 center, float radius, float startAngle, float endAngle,
-        Paint paint, int segments, bool outer, float aaSize) {
+    private void addCircleFringe(Vector2 center, float radius, float startAngle, float endAngle, Paint paint, int segments, bool outer, float aaSize) {
         if (segments < 1 || radius <= 0f) return;
 
-        float fringeRadius = outer ? radius + aaSize : Math.Max(0f, radius - aaSize);
+        float fringeRadius = outer ? radius + aaSize : float.Max(0f, radius - aaSize);
         if (!outer && fringeRadius >= radius) return;
 
         ensureCapacity((segments + 1) * 2, segments * 6);
@@ -522,8 +526,8 @@ public class GuilBatch {
         float midRadius = innerRadius + outerRadius * 0.5f;
         float halfThick = outerRadius * 0.5f;
 
-        float borderThick = Math.Min(borderThickness, halfThick);
-        float fillHalfThick = Math.Max(0f, halfThick - borderThick);
+        float borderThick = float.Min(borderThickness, halfThick);
+        float fillHalfThick = float.Max(0f, halfThick - borderThick);
 
         bool hasBorder = borderThick > 0f && !borderPaint.IsTransparent();
         bool hasFill = fillHalfThick > 0f && !fillPaint.IsTransparent();
@@ -554,6 +558,7 @@ public class GuilBatch {
         }
 
         if (aaSize == 0f) return;
+        aaSize /= _cameraZoom;
 
         if (hasBorder) {
             addCircleFringe(center, midRadius + halfThick, startAngle, endAngle, borderPaint, segments, true, aaSize);
@@ -562,7 +567,6 @@ public class GuilBatch {
             addCircleFringe(center, midRadius + fillHalfThick, startAngle, endAngle, borderPaint, segments, false, aaSize);
 
             float arcSpan = endAngle - startAngle;
-            //Console.WriteLine(float.RadiansToDegrees(arcSpan));
 
             float inSpan = arcSpan > float.Pi ? (arcSpanAngle(startCapCenter, endCapCenter, fillHalfThick) ?? 0) / 2 : 0;
             if (inSpan != float.Pi) {
@@ -609,7 +613,7 @@ public class GuilBatch {
     public void DrawCircle(Vector2 center, Paint fillPaint, Paint borderPaint, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
         var segments = computeSegments(radius, quality: quality);
-        float innerRadius = Math.Max(0, radius - borderThickness);
+        float innerRadius = float.Max(0, radius - borderThickness);
 
         bool hasBorder = borderThickness > 0 && !borderPaint.IsTransparent();
         bool hasFill = innerRadius > 0 && !fillPaint.IsTransparent();
@@ -626,8 +630,8 @@ public class GuilBatch {
             addRingSegment(center, 0, innerRadius, 0, float.Tau, fillPaint, segments);
         }
 
-
         if (aaSize == 0f) return;
+        aaSize /= _cameraZoom;
 
         if (hasBorder) {
             addCircleFringe(center, radius, 0, float.Tau, borderPaint, segments, true, aaSize);
@@ -661,7 +665,7 @@ public class GuilBatch {
         float rx = size.X * 0.5f;
         float ry = size.Y * 0.5f;
         float minHalf = float.Min(rx, ry);
-        borderThickness = Math.Clamp(borderThickness, 0f, minHalf);
+        borderThickness = float.Clamp(borderThickness, 0f, minHalf);
 
         borderPaint = transformPaint(borderPaint, position + origin, -origin, rotation, size);
         var padding = Vector2.One * borderThickness;
@@ -749,6 +753,7 @@ public class GuilBatch {
         }
 
         if (aaSize == 0f) return;
+        aaSize /= _cameraZoom;
 
         void addEllipseFringe(float erx, float ery, Paint paint, bool outer, float borderAOffset = 0f) {
             if (segments < 1 || erx <= 0f || ery <= 0f) return;
@@ -977,8 +982,8 @@ public class GuilBatch {
 
         actualTint = transformPaint(actualTint, position + origin, -origin, rotation, size);
 
-        float minHalf = Math.Min(actualSize.X, actualSize.Y) * 0.5f;
-        rounding = Math.Clamp(rounding, 0, minHalf);
+        float minHalf = float.Min(actualSize.X, actualSize.Y) * 0.5f;
+        rounding = float.Clamp(rounding, 0, minHalf);
 
         var cornerSegments = rounding > 0 ? computeSegments(rounding, MathHelper.PiOver2, cornerQuality) : 1;
 
@@ -1064,6 +1069,7 @@ public class GuilBatch {
         }
 
         if (aaSize != 0f) {
+            aaSize /= _cameraZoom;
             Vector2 aaPivot = position + origin;
             addTextureFringe(outCenters, outR, cornerSegments, actualTint, hasRotation, rotSin, rotCos, aaPivot, texIndex, position, actualSize, uvMin, uvMax, flipH, flipV, aaSize);
         }
@@ -1161,13 +1167,14 @@ public class GuilBatch {
         _ => 0.5f
     };
 
-    public static int computeSegments(float pixelRadius, float angleSpanRadians = float.Tau, ArcQuality quality = ArcQuality.Normal, int minSegments = 3) {
+    public int computeSegments(float radius, float angleSpanRadians = float.Tau, ArcQuality quality = ArcQuality.Normal, int minSegments = 3) {
+        var pixelRadius = radius * _cameraZoom;
         if (pixelRadius <= 0f) return minSegments;
 
         float clampedError = float.Min(qualityToError(quality), pixelRadius);
         int segments = (int)float.Ceiling(float.Pi / float.Acos(1.0f - clampedError / pixelRadius) * (float.Abs(angleSpanRadians) / float.Tau));
 
-        return Math.Max(segments, minSegments);
+        return int.Max(segments, minSegments);
     }
 }
 

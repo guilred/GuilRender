@@ -17,6 +17,7 @@ public class Tests : Game {
     private Texture2D _mg;
     private Texture2D _gr;
     private Texture2D _dg;
+    private Texture2D _pixel;
     private RenderTarget2D _mid;
     public Tests() {
         _graphics = new GraphicsDeviceManager(this);
@@ -26,6 +27,8 @@ public class Tests : Game {
 
     protected override void Initialize() {
         (_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight) = (1600, 900);
+        _graphics.SynchronizeWithVerticalRetrace = false;
+        IsFixedTimeStep = false;
         _graphics.ApplyChanges();
 
         base.Initialize();
@@ -38,6 +41,8 @@ public class Tests : Game {
         _mg = Content.Load<Texture2D>("mg");
         _gr = Content.Load<Texture2D>("gr");
         _dg = Content.Load<Texture2D>("doggo");
+        _pixel = new Texture2D(GraphicsDevice, 1, 1);
+        _pixel.SetData([Color.White]);
         _mid = new RenderTarget2D(GraphicsDevice, 1600, 900);
     }
     private bool _zoomed;
@@ -214,17 +219,28 @@ public class Tests : Game {
             _guilBatch.Begin();
 
             float squiWave = Math.Clamp((wave - 0.1f) / (0.75f - 0.1f), 0f, 1f);
-            var pos = new Vector2(200, 200);
-            var size = new Vector2(500, 400);
+            var pos = new Vector2(100, 100);
+            var size = new Vector2(400, 400);
 
             var ps = Paint.Linear(Vector2.Zero, Vector2.UnitX, Color.Blue, Color.Magenta) * 1;
             var ps2 = Paint.Linear(Vector2.UnitY * 0.5f, Vector2.UnitY * 0.5f + Vector2.UnitX, Color.Green, Color.Red).SetOffsets(0.5f, 0.5f) * 1;
 
             /*_guilBatch.DrawRectangle(pos, size, ps, ps2, 10, 40);
-            _guilBatch.DrawCircle(pos + size / 2, ps, ps2, size.X / 2, 0);
             _guilBatch.DrawLine(pos, pos + size, ps, ps2, 50, 10);
-            _guilBatch.DrawTexture(_dg, pos, size, null, ps * 0.1f, rounding: 40);*/
-            _guilBatch.DrawArc(pos + size / 2, ps, ps2, size.X / 2 - 80, 80, float.Pi * 2 * 0.02f, float.Pi * 2 * 0.98f, 10);
+            //_guilBatch.DrawArc(pos + size / 2, ps, ps2, size.X / 2 - 80, 80, float.Pi * 2 * 0.02f, float.Pi * 2 * 0.98f, 10);
+            //_guilBatch.DrawCircle(pos + size / 2, ps, ps2, size.X / 2, 5);*/
+            _guilBatch.DrawTexture(_gr, pos, size, null, Color.White, rounding: 40);
+
+            _guilBatch.End();
+            BlendState invertBlend = new() {
+                ColorBlendFunction = BlendFunction.Add,
+                ColorSourceBlend = Blend.InverseDestinationColor,
+                ColorDestinationBlend = Blend.Zero,
+            };
+            _guilBatch.Begin(blendState: invertBlend);
+
+            pos = new Vector2(100, 100);
+            _guilBatch.FillRectangle(pos, size, Color.White, rounding: 40);
 
             _guilBatch.End();
         }
