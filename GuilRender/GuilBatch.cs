@@ -653,6 +653,207 @@ public class GuilBatch {
 
     public void BorderCircle(Vector2 center, Color borderColor, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => BorderCircle(center, Paint.Solid(borderColor), radius, borderThickness, quality, aaSize);
+
+    public void DrawEllipse(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
+        ensureBegun();
+        if (size.X <= 0 || size.Y <= 0) return;
+
+        float rx = size.X * 0.5f;
+        float ry = size.Y * 0.5f;
+        float minHalf = float.Min(rx, ry);
+        borderThickness = Math.Clamp(borderThickness, 0f, minHalf);
+
+        borderPaint = transformPaint(borderPaint, position + origin, -origin, rotation, size);
+        var padding = Vector2.One * borderThickness;
+        fillPaint = transformPaint(fillPaint, position + padding + origin, -origin, rotation, size - padding * 2);
+
+        bool hasFill = borderThickness < minHalf && !fillPaint.IsTransparent();
+        bool hasBorder = borderThickness > 0f && !borderPaint.IsTransparent();
+
+        if (!hasFill && !hasBorder) return;
+
+        int segments = computeSegments(float.Max(rx, ry), float.Tau, quality);
+
+        float innerRx = float.Max(0f, rx - borderThickness);
+        float innerRy = float.Max(0f, ry - borderThickness);
+
+        Vector2 center = position + new Vector2(rx, ry);
+        Vector2 pivot = position + origin;
+        bool hasRotation = rotation != 0f;
+        float rotSin = 0f, rotCos = 1f;
+        if (hasRotation) (rotSin, rotCos) = float.SinCos(rotation);
+
+        Vector2 Rotate(Vector2 p) {
+            if (!hasRotation) return p;
+            float dx = p.X - pivot.X, dy = p.Y - pivot.Y;
+            return new Vector2(
+                pivot.X + dx * rotCos - dy * rotSin,
+                pivot.Y + dx * rotSin + dy * rotCos);
+        }
+
+        PrimitiveVertex Vert(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params);
+        PrimitiveVertex VertTransparent(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params) {
+            ColorA = Color.Transparent,
+            ColorB = Color.Transparent
+        };
+
+        if (hasFill) {
+            ensureCapacity(segments + 2, segments * 3);
+            int baseIdx = _vertexCount;
+
+            _vertices[_vertexCount++] = Vert(Rotate(center), fillPaint);
+
+            for (int i = 0; i <= segments; i++) {
+                float angle = ((float)i / segments) * float.Tau;
+                (float sin, float cos) = float.SinCos(angle);
+                Vector2 pos = center + new Vector2(cos * innerRx, sin * innerRy);
+                _vertices[_vertexCount++] = Vert(Rotate(pos), fillPaint);
+            }
+
+            for (int i = 0; i < segments; i++) {
+                _indices[_indexCount++] = (short)baseIdx;
+                _indices[_indexCount++] = (short)(baseIdx + 1 + i);
+                _indices[_indexCount++] = (short)(baseIdx + 1 + i + 1);
+            }
+        }
+
+        if (hasBorder) {
+            int borderVerts = (segments + 1) * 2;
+            ensureCapacity(borderVerts, segments * 6);
+            int baseIdx = _vertexCount;
+
+            for (int i = 0; i <= segments; i++) {
+                float angle = ((float)i / segments) * float.Tau;
+                (float sin, float cos) = float.SinCos(angle);
+                Vector2 innerPos = center + new Vector2(cos * innerRx, sin * innerRy);
+                Vector2 outerPos = center + new Vector2(cos * rx, sin * ry);
+
+                _vertices[_vertexCount++] = Vert(Rotate(innerPos), borderPaint);
+                _vertices[_vertexCount++] = Vert(Rotate(outerPos), borderPaint);
+            }
+
+            for (int i = 0; i < segments; i++) {
+                int inner0 = baseIdx + i * 2;
+                int outer0 = baseIdx + i * 2 + 1;
+                int inner1 = baseIdx + (i + 1) * 2;
+                int outer1 = baseIdx + (i + 1) * 2 + 1;
+
+                _indices[_indexCount++] = (short)inner0;
+                _indices[_indexCount++] = (short)outer0;
+                _indices[_indexCount++] = (short)inner1;
+
+                _indices[_indexCount++] = (short)outer0;
+                _indices[_indexCount++] = (short)outer1;
+                _indices[_indexCount++] = (short)inner1;
+            }
+        }
+
+        if (aaSize == 0f) return;
+
+        void addEllipseFringe(float erx, float ery, Paint paint, bool outer, float borderAOffset = 0f) {
+            if (segments < 1 || erx <= 0f || ery <= 0f) return;
+
+            int fringeVerts = (segments + 1) * 2;
+            ensureCapacity(fringeVerts, segments * 6);
+            int fringeStart = _vertexCount;
+
+            Paint fringePaint = paint;
+            if (borderAOffset > 0f) {
+                fringePaint = paint * (1f - borderAOffset);
+            }
+
+            for (int i = 0; i <= segments; i++) {
+                float angle = ((float)i / segments) * float.Tau;
+                (float sin, float cos) = float.SinCos(angle);
+
+                Vector2 basePos = center + new Vector2(cos * erx, sin * ery);
+                Vector2 normal = Vector2.Normalize(new Vector2(cos * ery, sin * erx));
+                Vector2 fringePos = outer
+                    ? basePos + normal * aaSize
+                    : basePos - normal * aaSize;
+
+                Vector2 rotatedBase = Rotate(basePos);
+                Vector2 rotatedFringe;
+                if (hasRotation) {
+                    float rxNorm = normal.X * aaSize;
+                    float ryNorm = normal.Y * aaSize;
+                    float wdx = rxNorm * rotCos - ryNorm * rotSin;
+                    float wdy = rxNorm * rotSin + ryNorm * rotCos;
+                    rotatedFringe = outer
+                        ? new Vector2(rotatedBase.X + wdx, rotatedBase.Y + wdy)
+                        : new Vector2(rotatedBase.X - wdx, rotatedBase.Y - wdy);
+                }
+                else {
+                    rotatedFringe = fringePos;
+                }
+
+                _vertices[_vertexCount++] = Vert(rotatedBase, fringePaint);
+                _vertices[_vertexCount++] = VertTransparent(rotatedFringe, fringePaint);
+            }
+
+            for (int i = 0; i < segments; i++) {
+                int v0 = fringeStart + i * 2;
+                int v1 = fringeStart + i * 2 + 1;
+                int v2 = fringeStart + (i + 1) * 2;
+                int v3 = fringeStart + (i + 1) * 2 + 1;
+
+                _indices[_indexCount++] = (short)v0;
+                _indices[_indexCount++] = (short)v1;
+                _indices[_indexCount++] = (short)v2;
+
+                _indices[_indexCount++] = (short)v1;
+                _indices[_indexCount++] = (short)v3;
+                _indices[_indexCount++] = (short)v2;
+            }
+        }
+
+        if (hasBorder) {
+            addEllipseFringe(rx, ry, borderPaint, true);
+            addEllipseFringe(innerRx, innerRy, borderPaint, false);
+        }
+        if (hasFill) {
+            float borderA = hasBorder ? byte.Max(borderPaint.ColorA.A, borderPaint.ColorB.A) / 255f : 0f;
+            addEllipseFringe(innerRx, innerRy, fillPaint, true, borderA);
+        }
+    }
+
+    public void DrawEllipse(Vector2 position, Vector2 size, Color fillColor, Color borderColor, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(position, size, Paint.Solid(fillColor), Paint.Solid(borderColor), borderThickness, rotation, origin, quality, aaSize);
+
+    public void FillEllipse(Vector2 position, Vector2 size, Paint fillPaint, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(position, size, fillPaint, default, 0f, rotation, origin, quality, aaSize);
+
+    public void FillEllipse(Vector2 position, Vector2 size, Color fillColor, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => FillEllipse(position, size, Paint.Solid(fillColor), rotation, origin, quality, aaSize);
+
+    public void BorderEllipse(Vector2 position, Vector2 size, Paint borderPaint, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(position, size, default, borderPaint, borderThickness, rotation, origin, quality, aaSize);
+
+    public void BorderEllipse(Vector2 position, Vector2 size, Color borderColor, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => BorderEllipse(position, size, Paint.Solid(borderColor), borderThickness, rotation, origin, quality, aaSize);
+
+    public void DrawEllipse(Vector2 center, float xRadius, float yRadius, Paint fillPaint, Paint borderPaint, float borderThickness, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
+        Vector2 size = new(xRadius * 2f, yRadius * 2f);
+        Vector2 pos = center - new Vector2(xRadius, yRadius);
+        Vector2 origin = new(xRadius, yRadius);
+        DrawEllipse(pos, size, fillPaint, borderPaint, borderThickness, rotation, origin, quality, aaSize);
+    }
+
+    public void DrawEllipse(Vector2 center, float xRadius, float yRadius, Color fillColor, Color borderColor, float borderThickness, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(center, xRadius, yRadius, Paint.Solid(fillColor), Paint.Solid(borderColor), borderThickness, rotation, quality, aaSize);
+
+    public void FillEllipse(Vector2 center, float xRadius, float yRadius, Paint fillPaint, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(center, xRadius, yRadius, fillPaint, default, 0f, rotation, quality, aaSize);
+
+    public void FillEllipse(Vector2 center, float xRadius, float yRadius, Color fillColor, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => FillEllipse(center, xRadius, yRadius, Paint.Solid(fillColor), rotation, quality, aaSize);
+
+    public void BorderEllipse(Vector2 center, float xRadius, float yRadius, Paint borderPaint, float borderThickness, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(center, xRadius, yRadius, default, borderPaint, borderThickness, rotation, quality, aaSize);
+
+    public void BorderEllipse(Vector2 center, float xRadius, float yRadius, Color borderColor, float borderThickness, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => BorderEllipse(center, xRadius, yRadius, Paint.Solid(borderColor), borderThickness, rotation, quality, aaSize);
+
     private static Paint transformPaint(Paint paint, Vector2 center, Vector2 offset, float rotation, Vector2? size = null) {
         if (paint.isNormalized && size.HasValue) {
             var r = size.Value;
