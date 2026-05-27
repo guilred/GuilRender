@@ -299,7 +299,7 @@ public class GuilBatch {
             _indices[_indexCount++] = (short)v2;
         }
     }
-    public void DrawRectangle(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rounding, float rotation = 0f, Vector2 origin = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawRectangle(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rounding, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
         if (size.X <= 0 || size.Y <= 0) return;
 
@@ -307,9 +307,10 @@ public class GuilBatch {
         rounding = float.Clamp(rounding, 0f, minHalf);
         borderThickness = float.Clamp(borderThickness, 0f, minHalf);
 
-        borderPaint = transformPaint(borderPaint, position + origin, -origin, rotation, size);
+        var usedOrigin = origin ?? size / 2;
+        borderPaint = transformPaint(borderPaint, position + usedOrigin, -usedOrigin, rotation, size);
         var padding = Vector2.One * borderThickness;
-        fillPaint = transformPaint(fillPaint, position + padding + origin, -origin, rotation, size - padding * 2);
+        fillPaint = transformPaint(fillPaint, position + padding + usedOrigin, -usedOrigin, rotation, size - padding * 2);
 
         bool hasFill = borderThickness < minHalf && !fillPaint.IsTransparent();
         bool hasBorder = borderThickness > 0f && !borderPaint.IsTransparent();
@@ -340,7 +341,7 @@ public class GuilBatch {
             innerPos + new Vector2(innerSize.X - inR, inR),
         ];
 
-        Vector2 pivot = position + origin;
+        Vector2 pivot = position + usedOrigin;
         bool hasRotation = rotation != 0f;
         float rotSin = 0f, rotCos = 1f;
         if (hasRotation) (rotSin, rotCos) = float.SinCos(rotation);
@@ -411,7 +412,7 @@ public class GuilBatch {
         if (aaSize == 0f) return;
         aaSize /= _cameraZoom;
 
-        Vector2 aaPivot = position + origin;
+        Vector2 aaPivot = position + usedOrigin;
 
         if (hasBorder) {
             addRectFringe(outerCenters, outR, cornerSegments, borderPaint, true, hasRotation, rotSin, rotCos, aaPivot, aaSize);
@@ -423,19 +424,19 @@ public class GuilBatch {
         }
     }
 
-    public void DrawRectangle(Vector2 position, Vector2 size, Color fillColor, Color borderColor, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2 origin = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
+    public void DrawRectangle(Vector2 position, Vector2 size, Color fillColor, Color borderColor, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawRectangle(position, size, Paint.Solid(fillColor), Paint.Solid(borderColor), borderThickness, rounding, rotation, origin, cornerQuality, aaSize);
 
-    public void FillRectangle(Vector2 position, Vector2 size, Paint fillPaint, float rounding = 0f, float rotation = 0f, Vector2 origin = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
+    public void FillRectangle(Vector2 position, Vector2 size, Paint fillPaint, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawRectangle(position, size, fillPaint, default, 0, rounding, rotation, origin, cornerQuality, aaSize);
 
-    public void FillRectangle(Vector2 position, Vector2 size, Color fillColor, float rounding = 0f, float rotation = 0f, Vector2 origin = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
+    public void FillRectangle(Vector2 position, Vector2 size, Color fillColor, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => FillRectangle(position, size, Paint.Solid(fillColor), rounding, rotation, origin, cornerQuality, aaSize);
 
-    public void BorderRectangle(Vector2 position, Vector2 size, Paint borderPaint, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2 origin = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
+    public void BorderRectangle(Vector2 position, Vector2 size, Paint borderPaint, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawRectangle(position, size, default, borderPaint, borderThickness, rounding, rotation, origin, cornerQuality, aaSize);
 
-    public void BorderRectangle(Vector2 position, Vector2 size, Color borderColor, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2 origin = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
+    public void BorderRectangle(Vector2 position, Vector2 size, Color borderColor, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => BorderRectangle(position, size, Paint.Solid(borderColor), borderThickness, rounding, rotation, origin, cornerQuality, aaSize);
 
     public void DrawLine(Vector2 start, Vector2 end, Paint fillPaint, Paint borderPaint, float thickness, float borderThickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f) {

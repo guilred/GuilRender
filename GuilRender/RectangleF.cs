@@ -68,7 +68,7 @@ public struct RectangleF : IEquatable<RectangleF> {
     public readonly Vector2 TR => new(_x + _width, _y);
     public readonly Vector2 BL => new(_x, _y + _height);
     public readonly Vector2 BR => new(_x + _width, _y + _height);
-    public readonly Vector2[] Corners => [TopLeft, TopRight, BottomRight, BottomLeft];
+    public readonly (Vector2 TL, Vector2 TR, Vector2 BR, Vector2 BL) Corners => (TopLeft, TopRight, BottomRight, BottomLeft);
 
     public Vector2 Size {
         readonly get { return new Vector2(_width, _height); }
