@@ -141,14 +141,12 @@ public class GuilBatch {
         }
     }
 
-    private struct ClipState {
-        public Vector4 Rect;
-        public Vector2 Params;
-    }
+    private record struct ClipState(Vector4 Rect, Vector2 Params);
 
     private const int _maxClips = 2048;
     private readonly Stack<ClipState> _clipStack = new();
     private ClipState _currentClip = new() { Rect = Vector4.Zero, Params = Vector2.Zero };
+    private ClipState? _previousClip;
 
     public void PushClip(RectangleF clipRect, float rounding = 0f, float rotation = 0f, bool intersect = true) {
         Vector4 newRect = new(clipRect.Position.X, clipRect.Position.Y, clipRect.Width, clipRect.Height);
@@ -170,12 +168,19 @@ public class GuilBatch {
         _currentClip = new ClipState { Rect = newRect, Params = new Vector2(rounding, rotation) };
         _clipStack.Push(_currentClip);
     }
-
+    public void UnPopClip() {
+        if (_previousClip is null) return;
+        _clipStack.Push(_previousClip.Value);
+        _currentClip = _previousClip.Value;
+        _previousClip = null;
+    }
     public void PopClip() {
         if (_clipStack.Count > 0) {
-            _clipStack.Pop();
+            _previousClip = _clipStack.Pop();
         }
-        _currentClip = _clipStack.Count > 0 ? _clipStack.Peek() : _currentClip = new ClipState { Rect = new(0, 0, -1, 0), Params = Vector2.Zero };
+        _currentClip = _clipStack.Count > 0
+            ? _clipStack.Peek()
+            : new ClipState { Rect = new(0, 0, -1, 0), Params = Vector2.Zero };
     }
     private int getTextureIndex(Texture2D texture) {
         for (int i = 0; i < _textureCount; i++) {
