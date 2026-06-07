@@ -63,12 +63,7 @@ public class GuilBatch {
     public void Begin(Matrix? view = null, Matrix? projection = null, BlendState? blendState = null, SamplerState? samplerState = null, float? clipSmoothing = null) {
         if (_begun) throw new InvalidOperationException("Guilbatch is already begun.");
 
-
-        var currentView = view ?? Matrix.Identity;
-        _cameraZoom = new Vector3(currentView.M11, currentView.M12, currentView.M13).Length();
-        Matrix finalProj = currentView * (projection ?? Matrix.CreateOrthographicOffCenter(0, _device.Viewport.Width, _device.Viewport.Height, 0, 0f, 1f));
-
-        _projectionParam.SetValue(finalProj);
+        updateProjection(view, projection);
         _clipSmoothingParam.SetValue(clipSmoothing ?? 0.5f);
         _vertexCount = 0;
         _indexCount = 0;
@@ -77,6 +72,11 @@ public class GuilBatch {
         _begun = true;
         d_time += 1 / 60f;
         _currentClip = new ClipState { Rect = new(0, 0, -1, 0), Params = Vector2.Zero };
+    }
+    public void SetTransform(Matrix? view = null, Matrix? projection = null) {
+        ensureBegun();
+        flush();
+        updateProjection(view, projection);
     }
     private void ensureBegun() {
         if (!_begun) throw new InvalidOperationException("Guilbatch has not been begun.");
@@ -134,6 +134,12 @@ public class GuilBatch {
         _indexCount = 0;
         _textureCount = 0;
     }
+    private void updateProjection(Matrix? view, Matrix? projection) {
+        var currentView = view ?? Matrix.Identity;
+        _cameraZoom = new Vector3(currentView.M11, currentView.M12, currentView.M13).Length();
+        Matrix finalProj = currentView * (projection ?? Matrix.CreateOrthographicOffCenter(0, _device.Viewport.Width, _device.Viewport.Height, 0, 0f, 1f));
+        _projectionParam.SetValue(finalProj);
+    }
 
     private void ensureCapacity(int verticesToAdd, int indicesToAdd) {
         if (_vertexCount + verticesToAdd > _maxVertices || _indexCount + indicesToAdd > _maxIndices) {
@@ -148,7 +154,8 @@ public class GuilBatch {
     private ClipState _currentClip = new() { Rect = Vector4.Zero, Params = Vector2.Zero };
     private ClipState? _previousClip;
 
-    public void PushClip(RectangleF clipRect, float rounding = 0f, float rotation = 0f, bool intersect = true) {
+    public void PushClip(RectangleF clipRect, float rounding = 0f, float rotation = 0f, bool intersect = true, bool push = true) {
+        if (!push) return;
         Vector4 newRect = new(clipRect.Position.X, clipRect.Position.Y, clipRect.Width, clipRect.Height);
 
         if (intersect && _clipStack.Count > 0 && _currentClip.Rect.Z > 0 && _currentClip.Rect.W > 0) {
@@ -168,13 +175,15 @@ public class GuilBatch {
         _currentClip = new ClipState { Rect = newRect, Params = new Vector2(rounding, rotation) };
         _clipStack.Push(_currentClip);
     }
-    public void UnPopClip() {
+    public void UnPopClip(bool unpop = true) {
+        if (!unpop) return;
         if (_previousClip is null) return;
         _clipStack.Push(_previousClip.Value);
         _currentClip = _previousClip.Value;
         _previousClip = null;
     }
-    public void PopClip() {
+    public void PopClip(bool pop = true) {
+        if (!pop) return;
         if (_clipStack.Count > 0) {
             _previousClip = _clipStack.Pop();
         }
