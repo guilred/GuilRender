@@ -139,8 +139,8 @@ public sealed class GuilFont : IDisposable {
         public readonly float LineSpacing;
         public readonly float SpacingScale;
 
-        public FontContext(GuilFont font, float height, float? spacing, float? lineSpacing) {
-            (Atlas, LargestAtlas) = (font.getBestAtlas(height), font._atlases[^1]);
+        public FontContext(GuilFont font, float height, float? spacing, float? lineSpacing, GuilBatch? batch = null) {
+            (Atlas, LargestAtlas) = (font.getBestAtlas(height * (batch?.CameraZoom ?? 1)), font._atlases[^1]);
             (SpacingScale, AtlasScale, LAtlasScale) = (height / 120f, height / Atlas.Size, height / LargestAtlas.Size);
             (Spacing, LineSpacing) = ((spacing ?? font.Spacing) * SpacingScale, lineSpacing ?? font.LineSpacing);
         }
@@ -204,7 +204,7 @@ public sealed class GuilFont : IDisposable {
     }
     public void DrawString(GuilBatch batch, ReadOnlySpan<char> text, Vector2 position, Paint paint, float height, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, float rotation = 0, List<Paint>? perCharColor = null, Alignment alignment = default) {
         if (text.Length == 0) return;
-        var ctx = new FontContext(this, height, spacing, lineSpacing);
+        var ctx = new FontContext(this, height, spacing, lineSpacing, batch);
         var slice = text.Slice(index ?? 0, length ?? text.Length);
 
         var totalSize = MeasureString(slice, height, spacing, lineSpacing);
@@ -376,7 +376,7 @@ public sealed class GuilFont : IDisposable {
         wrapX = float.Max(position.X, wrapX);
         if (text.Length == 0 || wrapX == position.X) return;
 
-        var ctx = new FontContext(this, height, spacing, lineSpacing);
+        var ctx = new FontContext(this, height, spacing, lineSpacing, batch);
         var slice = text.Slice(index ?? 0, length ?? text.Length);
 
         var totalSizeX = wrapX - position.X;
@@ -447,7 +447,7 @@ public sealed class GuilFont : IDisposable {
         wrapX = float.Max(position.X, wrapX);
         if (wrapX == position.X) return;
 
-        var ctx = new FontContext(this, height, spacing, lineSpacing);
+        var ctx = new FontContext(this, height, spacing, lineSpacing, batch);
 
         var totalSizeX = wrapX - position.X;
         var totalSizeY = MeasureStringWrapped(lines, height, position.X, wrapX, spacing, lineSpacing).Y;
@@ -782,10 +782,10 @@ public sealed class GuilFont : IDisposable {
         currX += MeasureString(span, height, spacing, null, segStart, index.col - segStart).X;
         return new Vector2(currX + (index.col > 0 ? ctx.Spacing / 2 : -ctx.Spacing / 2), currY);
     }
-    public void IterateSelectionRects(List<List<char>> lines, Vector2 position, float height, float wrapX, (int col, int ln) start, (int col, int ln) end, Action<RectangleF>? onRect = null, float padding = 0, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
+    public void IterateSelectionRects(List<List<char>> lines, GuilBatch batch, Vector2 position, float height, float wrapX, (int col, int ln) start, (int col, int ln) end, Action<GuilBatch, RectangleF>? onRect = null, float padding = 0, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (lines.Count == 0 || wrapX == position.X) return;
-        var ctx = new FontContext(this, height, spacing, lineSpacing);
+        var ctx = new FontContext(this, height, spacing, lineSpacing, batch);
         var visualLine = 0;
 
         var totalSizeX = wrapX - position.X;
@@ -834,7 +834,7 @@ public sealed class GuilFont : IDisposable {
                         x2 - x1 + padding * 2,
                         height + padding * 2
                     );
-                    onRect?.Invoke(lineRect);
+                    onRect?.Invoke(batch, lineRect);
                 }
                 visualLine++;
             }

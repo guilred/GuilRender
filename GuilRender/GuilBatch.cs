@@ -32,7 +32,7 @@ public class GuilBatch {
     private int _indexCount;
 
     private bool _begun;
-    private float _cameraZoom;
+    public float CameraZoom { get; private set; }
 
     // debugging
     private double d_time;
@@ -136,7 +136,7 @@ public class GuilBatch {
     }
     private void updateProjection(Matrix? view, Matrix? projection) {
         var currentView = view ?? Matrix.Identity;
-        _cameraZoom = new Vector3(currentView.M11, currentView.M12, currentView.M13).Length();
+        CameraZoom = new Vector3(currentView.M11, currentView.M12, currentView.M13).Length();
         Matrix finalProj = currentView * (projection ?? Matrix.CreateOrthographicOffCenter(0, _device.Viewport.Width, _device.Viewport.Height, 0, 0f, 1f));
         _projectionParam.SetValue(finalProj);
     }
@@ -424,7 +424,7 @@ public class GuilBatch {
         }
 
         if (aaSize == 0f) return;
-        aaSize /= _cameraZoom;
+        aaSize /= CameraZoom;
 
         Vector2 aaPivot = position + usedOrigin;
 
@@ -573,7 +573,7 @@ public class GuilBatch {
         }
 
         if (aaSize == 0f) return;
-        aaSize /= _cameraZoom;
+        aaSize /= CameraZoom;
 
         if (hasBorder) {
             addCircleFringe(center, midRadius + halfThick, startAngle, endAngle, borderPaint, segments, true, aaSize);
@@ -646,7 +646,7 @@ public class GuilBatch {
         }
 
         if (aaSize == 0f) return;
-        aaSize /= _cameraZoom;
+        aaSize /= CameraZoom;
 
         if (hasBorder) {
             addCircleFringe(center, radius, 0, float.Tau, borderPaint, segments, true, aaSize);
@@ -768,7 +768,7 @@ public class GuilBatch {
         }
 
         if (aaSize == 0f) return;
-        aaSize /= _cameraZoom;
+        aaSize /= CameraZoom;
 
         void addEllipseFringe(float erx, float ery, Paint paint, bool outer, float borderAOffset = 0f) {
             if (segments < 1 || erx <= 0f || ery <= 0f) return;
@@ -1084,7 +1084,7 @@ public class GuilBatch {
         }
 
         if (aaSize != 0f) {
-            aaSize /= _cameraZoom;
+            aaSize /= CameraZoom;
             Vector2 aaPivot = position + origin;
             addTextureFringe(outCenters, outR, cornerSegments, actualTint, hasRotation, rotSin, rotCos, aaPivot, texIndex, position, actualSize, uvMin, uvMax, flipH, flipV, aaSize);
         }
@@ -1183,7 +1183,7 @@ public class GuilBatch {
     };
 
     public int computeSegments(float radius, float angleSpanRadians = float.Tau, ArcQuality quality = ArcQuality.Normal, int minSegments = 3) {
-        var pixelRadius = radius * _cameraZoom;
+        var pixelRadius = radius * CameraZoom;
         if (pixelRadius <= 0f) return minSegments;
 
         float clampedError = float.Min(qualityToError(quality), pixelRadius);
