@@ -313,7 +313,7 @@ public class GuilBatch {
             _indices[_indexCount++] = (short)v2;
         }
     }
-    public void DrawRectangle(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rounding, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawRectangle(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rounding = 0, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
         if (size.X <= 0 || size.Y <= 0) return;
 
@@ -438,20 +438,11 @@ public class GuilBatch {
         }
     }
 
-    public void DrawRectangle(Vector2 position, Vector2 size, Color fillColor, Color borderColor, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
-        => DrawRectangle(position, size, Paint.Solid(fillColor), Paint.Solid(borderColor), borderThickness, rounding, rotation, origin, cornerQuality, aaSize);
-
     public void FillRectangle(Vector2 position, Vector2 size, Paint fillPaint, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawRectangle(position, size, fillPaint, default, 0, rounding, rotation, origin, cornerQuality, aaSize);
 
-    public void FillRectangle(Vector2 position, Vector2 size, Color fillColor, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
-        => FillRectangle(position, size, Paint.Solid(fillColor), rounding, rotation, origin, cornerQuality, aaSize);
-
     public void BorderRectangle(Vector2 position, Vector2 size, Paint borderPaint, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawRectangle(position, size, default, borderPaint, borderThickness, rounding, rotation, origin, cornerQuality, aaSize);
-
-    public void BorderRectangle(Vector2 position, Vector2 size, Color borderColor, float borderThickness, float rounding = 0f, float rotation = 0f, Vector2? origin = null, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
-        => BorderRectangle(position, size, Paint.Solid(borderColor), borderThickness, rounding, rotation, origin, cornerQuality, aaSize);
 
     public void DrawLine(Vector2 start, Vector2 end, Paint fillPaint, Paint borderPaint, float thickness, float borderThickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
@@ -474,20 +465,11 @@ public class GuilBatch {
         DrawRectangle(position, size, fillPaint, borderPaint, borderThickness, rounding: thickness * 0.5f, angle, origin, capQuality, aaSize);
     }
 
-    public void DrawLine(Vector2 start, Vector2 end, Color color, Color borderColor, float thickness, float borderThickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f)
-        => DrawLine(start, end, Paint.Solid(color), Paint.Solid(borderColor), thickness, borderThickness, capQuality, aaSize);
-
     public void FillLine(Vector2 start, Vector2 end, Paint paint, float thickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawLine(start, end, paint, default, thickness, 0f, capQuality, aaSize);
 
-    public void FillLine(Vector2 start, Vector2 end, Color color, float thickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f)
-        => FillLine(start, end, Paint.Solid(color), thickness, capQuality, aaSize);
-
     public void BorderLine(Vector2 start, Vector2 end, Paint borderPaint, float thickness, float borderThickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawLine(start, end, default, borderPaint, thickness, borderThickness, capQuality, aaSize);
-
-    public void BorderLine(Vector2 start, Vector2 end, Color borderColor, float thickness, float borderThickness, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f)
-        => BorderLine(start, end, Paint.Solid(borderColor), thickness, borderThickness, capQuality, aaSize);
 
     private void addCircleFringe(Vector2 center, float radius, float startAngle, float endAngle, Paint paint, int segments, bool outer, float aaSize) {
         if (segments < 1 || radius <= 0f) return;
@@ -610,20 +592,11 @@ public class GuilBatch {
         }
     }
 
-    public void DrawArc(Vector2 center, Color fillColor, Color borderColor, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => DrawArc(center, Paint.Solid(fillColor), Paint.Solid(borderColor), innerRadius, outerRadius, startAngle, endAngle, borderThickness, quality, aaSize);
-
     public void FillArc(Vector2 center, Paint fillPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawArc(center, fillPaint, default, innerRadius, outerRadius, startAngle, endAngle, 0f, quality, aaSize);
 
-    public void FillArc(Vector2 center, Color fillColor, float innerRadius, float outerRadius, float startAngle, float endAngle, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => FillArc(center, Paint.Solid(fillColor), innerRadius, outerRadius, startAngle, endAngle, quality, aaSize);
-
     public void BorderArc(Vector2 center, Paint borderPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawArc(center, default, borderPaint, innerRadius, outerRadius, startAngle, endAngle, borderThickness, quality, aaSize);
-
-    public void BorderArc(Vector2 center, Color borderColor, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => BorderArc(center, Paint.Solid(borderColor), innerRadius, outerRadius, startAngle, endAngle, borderThickness, quality, aaSize);
 
     public void DrawCircle(Vector2 center, Paint fillPaint, Paint borderPaint, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
@@ -658,20 +631,11 @@ public class GuilBatch {
         }
     }
 
-    public void DrawCircle(Vector2 center, Color fillColor, Color borderColor, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => DrawCircle(center, Paint.Solid(fillColor), Paint.Solid(borderColor), radius, borderThickness, quality, aaSize);
-
     public void FillCircle(Vector2 center, Paint fillPaint, float radius, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawCircle(center, fillPaint, default, radius, 0f, quality, aaSize);
 
-    public void FillCircle(Vector2 center, Color fillColor, float radius, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => FillCircle(center, Paint.Solid(fillColor), radius, quality, aaSize);
-
     public void BorderCircle(Vector2 center, Paint borderPaint, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawCircle(center, default, borderPaint, radius, borderThickness, quality, aaSize);
-
-    public void BorderCircle(Vector2 center, Color borderColor, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => BorderCircle(center, Paint.Solid(borderColor), radius, borderThickness, quality, aaSize);
 
     public void DrawEllipse(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
@@ -837,20 +801,11 @@ public class GuilBatch {
         }
     }
 
-    public void DrawEllipse(Vector2 position, Vector2 size, Color fillColor, Color borderColor, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => DrawEllipse(position, size, Paint.Solid(fillColor), Paint.Solid(borderColor), borderThickness, rotation, origin, quality, aaSize);
-
     public void FillEllipse(Vector2 position, Vector2 size, Paint fillPaint, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawEllipse(position, size, fillPaint, default, 0f, rotation, origin, quality, aaSize);
 
-    public void FillEllipse(Vector2 position, Vector2 size, Color fillColor, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => FillEllipse(position, size, Paint.Solid(fillColor), rotation, origin, quality, aaSize);
-
     public void BorderEllipse(Vector2 position, Vector2 size, Paint borderPaint, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawEllipse(position, size, default, borderPaint, borderThickness, rotation, origin, quality, aaSize);
-
-    public void BorderEllipse(Vector2 position, Vector2 size, Color borderColor, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => BorderEllipse(position, size, Paint.Solid(borderColor), borderThickness, rotation, origin, quality, aaSize);
 
     public void DrawEllipse(Vector2 center, float xRadius, float yRadius, Paint fillPaint, Paint borderPaint, float borderThickness, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         Vector2 size = new(xRadius * 2f, yRadius * 2f);
@@ -859,20 +814,11 @@ public class GuilBatch {
         DrawEllipse(pos, size, fillPaint, borderPaint, borderThickness, rotation, origin, quality, aaSize);
     }
 
-    public void DrawEllipse(Vector2 center, float xRadius, float yRadius, Color fillColor, Color borderColor, float borderThickness, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => DrawEllipse(center, xRadius, yRadius, Paint.Solid(fillColor), Paint.Solid(borderColor), borderThickness, rotation, quality, aaSize);
-
     public void FillEllipse(Vector2 center, float xRadius, float yRadius, Paint fillPaint, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawEllipse(center, xRadius, yRadius, fillPaint, default, 0f, rotation, quality, aaSize);
 
-    public void FillEllipse(Vector2 center, float xRadius, float yRadius, Color fillColor, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => FillEllipse(center, xRadius, yRadius, Paint.Solid(fillColor), rotation, quality, aaSize);
-
     public void BorderEllipse(Vector2 center, float xRadius, float yRadius, Paint borderPaint, float borderThickness, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawEllipse(center, xRadius, yRadius, default, borderPaint, borderThickness, rotation, quality, aaSize);
-
-    public void BorderEllipse(Vector2 center, float xRadius, float yRadius, Color borderColor, float borderThickness, float rotation = 0f, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => BorderEllipse(center, xRadius, yRadius, Paint.Solid(borderColor), borderThickness, rotation, quality, aaSize);
 
     private static Paint transformPaint(Paint paint, Vector2 center, Vector2 offset, float rotation, Vector2? size = null) {
         if (paint.isNormalized && size.HasValue) {
