@@ -64,20 +64,21 @@ public struct Paint {
             OffsetB = 1f
         };
     }
-    public Paint SetOffsets(float offsetA = 0f, float offsetB = 0f, bool usePixelOffsets = false) {
+    public Paint SetOffsets(double offsetA = 0f, double offsetB = 0f, bool usePixelOffsets = false) {
+        var (dA, dB) = ((float)offsetA, (float)offsetB);
         if (!usePixelOffsets) {
-            (OffsetA, OffsetB) = (offsetA, 1 - offsetB);
+            (OffsetA, OffsetB) = (dA, 1 - dB);
             return this;
         }
         if (isNormalized) {
-            (OffsetA, OffsetB) = (offsetA, 1 - offsetB);
+            (OffsetA, OffsetB) = (dA, 1 - dB);
             isPixelOffsets = true;
             return this;
         }
 
         float distance = Vector2.Distance(Start, End);
         if (distance > 0.0001f) {
-            (OffsetA, OffsetB) = (offsetA / distance, (distance - offsetB) / distance);
+            (OffsetA, OffsetB) = (dA / distance, (distance - dB) / distance);
             return this;
         }
         (OffsetA, OffsetB) = (0f, 1f);
