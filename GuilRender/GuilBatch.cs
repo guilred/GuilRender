@@ -637,6 +637,47 @@ public class GuilBatch {
     public void BorderCircle(Vector2 center, Paint borderPaint, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawCircle(center, default, borderPaint, radius, borderThickness, quality, aaSize);
 
+    public void DrawNGon(Vector2 center, int sides, float radius, Paint fillPaint, Paint borderPaint, float borderThickness, float rotation = 0f, float aaSize = 1f) {
+        ensureBegun();
+        if (sides < 3 || radius <= 0f) return;
+
+        float innerRadius = float.Max(0, radius - borderThickness);
+        bool hasBorder = borderThickness > 0 && !borderPaint.IsTransparent();
+        bool hasFill = innerRadius > 0 && !fillPaint.IsTransparent();
+
+        if (!hasBorder && !hasFill) return;
+
+        Vector2 size = Vector2.One * radius * 2;
+        if (hasBorder) {
+            borderPaint = transformPaint(borderPaint, center, -Vector2.One * radius, rotation, size);
+            addRingSegment(center, innerRadius, radius, rotation, rotation + float.Tau, borderPaint, sides);
+        }
+        if (hasFill) {
+            var padding = Vector2.One * borderThickness;
+            size -= padding * 2;
+            fillPaint = transformPaint(fillPaint, center, -Vector2.One * radius + padding, rotation, size);
+            addRingSegment(center, 0, innerRadius, rotation, rotation + float.Tau, fillPaint, sides);
+        }
+
+        if (aaSize == 0f) return;
+        aaSize /= CameraZoom;
+
+        if (hasBorder) {
+            addCircleFringe(center, radius, rotation, rotation + float.Tau, borderPaint, sides, true, aaSize);
+            addCircleFringe(center, innerRadius, rotation, rotation + float.Tau, borderPaint, sides, false, aaSize);
+        }
+        if (hasFill) {
+            float borderA = hasBorder ? byte.Max(borderPaint.ColorA.A, borderPaint.ColorB.A) / 255f : 0;
+            addCircleFringe(center, innerRadius, rotation, rotation + float.Tau, fillPaint * (1 - borderA), sides, true, aaSize);
+        }
+    }
+
+    public void FillNGon(Vector2 center, int sides, float radius, Paint fillPaint, float rotation = 0f, float aaSize = 1f)
+        => DrawNGon(center, sides, radius, fillPaint, default, 0f, rotation, aaSize);
+
+    public void BorderNGon(Vector2 center, int sides, float radius, Paint borderPaint, float borderThickness, float rotation = 0f, float aaSize = 1f)
+        => DrawNGon(center, sides, radius, default, borderPaint, borderThickness, rotation, aaSize);
+
     public void DrawEllipse(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
         if (size.X <= 0 || size.Y <= 0) return;
