@@ -81,6 +81,7 @@ public struct RectangleF : IEquatable<RectangleF> {
     public readonly Vector2 Center => new(_x + _width / 2, _y + _height / 2);
 
     public static RectangleF Empty => new(0, 0, 0, 0);
+    public readonly bool IsEmpty => Width == 0 && Height == 0 && X == 0 && Y == 0;
 
     public RectangleF(float x, float y, float width, float height) {
         _x = x;
