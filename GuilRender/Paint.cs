@@ -106,6 +106,44 @@ public struct Paint {
     public Paint Reversed() {
         return this with { Start = End, End = Start, OffsetA = OffsetB, OffsetB = OffsetA };
     }
+    public Paint HueShift(float dHue) {
+        return this with { ColorA = ShiftHue(ColorA, dHue), ColorB = ShiftHue(ColorB, dHue) };
+    }
+
+    public static Color ShiftHue(Color c, float degrees) {
+        float r = c.R / 255f, g = c.G / 255f, b = c.B / 255f;
+        float max = MathF.Max(r, MathF.Max(g, b));
+        float min = MathF.Min(r, MathF.Min(g, b));
+        float delta = max - min;
+
+        float h = 0f;
+        if (delta > 0.00001f) {
+            if (max == r) h = 60f * (((g - b) / delta) % 6f);
+            else if (max == g) h = 60f * (((b - r) / delta) + 2f);
+            else h = 60f * (((r - g) / delta) + 4f);
+        }
+        if (h < 0f) h += 360f;
+
+        float s = max <= 0.00001f ? 0f : delta / max;
+        float v = max;
+
+        h = (h + degrees) % 360f;
+        if (h < 0f) h += 360f;
+
+        float chroma = v * s;
+        float x = chroma * (1f - MathF.Abs((h / 60f) % 2f - 1f));
+        float m = v - chroma;
+
+        float rr, gg, bb;
+        if (h < 60f) { rr = chroma; gg = x; bb = 0f; }
+        else if (h < 120f) { rr = x; gg = chroma; bb = 0f; }
+        else if (h < 180f) { rr = 0f; gg = chroma; bb = x; }
+        else if (h < 240f) { rr = 0f; gg = x; bb = chroma; }
+        else if (h < 300f) { rr = x; gg = 0f; bb = chroma; }
+        else { rr = chroma; gg = 0f; bb = x; }
+
+        return new Color(rr + m, gg + m, bb + m, c.A / 255f);
+    }
     public bool IsOpaque() => ColorA.A == 255 && ColorB.A == 255;
     public bool IsTransparent() => ColorA.A == 0 && ColorB.A == 0;
     public static Paint operator *(Paint l, float r) {
