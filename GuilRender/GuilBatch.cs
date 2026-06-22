@@ -637,7 +637,7 @@ public class GuilBatch {
     public void BorderCircle(Vector2 center, Paint borderPaint, float radius, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawCircle(center, default, borderPaint, radius, borderThickness, quality, aaSize);
 
-    public void DrawNGon(Vector2 center, int sides, float radius, Paint fillPaint, Paint borderPaint, float borderThickness, float rotation = 0f, float aaSize = 1f) {
+    public void DrawNGon(Vector2 center, float radius, Paint fillPaint, Paint borderPaint, int sides, float borderThickness, float rotation = 0f, float aaSize = 1f) {
         ensureBegun();
         if (sides < 3 || radius <= 0f) return;
 
@@ -672,11 +672,11 @@ public class GuilBatch {
         }
     }
 
-    public void FillNGon(Vector2 center, int sides, float radius, Paint fillPaint, float rotation = 0f, float aaSize = 1f)
-        => DrawNGon(center, sides, radius, fillPaint, default, 0f, rotation, aaSize);
+    public void FillNGon(Vector2 center, float radius, Paint fillPaint, int sides, float rotation = 0f, float aaSize = 1f)
+        => DrawNGon(center, radius, fillPaint, default, sides, 0f, rotation, aaSize);
 
-    public void BorderNGon(Vector2 center, int sides, float radius, Paint borderPaint, float borderThickness, float rotation = 0f, float aaSize = 1f)
-        => DrawNGon(center, sides, radius, default, borderPaint, borderThickness, rotation, aaSize);
+    public void BorderNGon(Vector2 center, float radius, Paint borderPaint, int sides, float borderThickness, float rotation = 0f, float aaSize = 1f)
+        => DrawNGon(center, radius, default, borderPaint, sides, borderThickness, rotation, aaSize);
 
     public void DrawEllipse(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rotation = 0f, Vector2 origin = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
