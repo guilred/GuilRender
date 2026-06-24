@@ -78,6 +78,16 @@ public class GuilBatch {
         flush();
         updateProjection(view, projection);
     }
+    public void SetBlendState(BlendState blendState) {
+        ensureBegun();
+        flush();
+        _currentBlendState = blendState;
+    }
+    public void SetSamplerState(SamplerState samplerState) {
+        ensureBegun();
+        flush();
+        _currentSamplerState = samplerState;
+    }
     private void ensureBegun() {
         if (!_begun) throw new InvalidOperationException("Guilbatch has not been begun.");
     }
@@ -974,15 +984,15 @@ public class GuilBatch {
             _indices[_indexCount++] = (short)v2;
         }
     }
-    public void DrawTexture(Texture2D texture, Vector2 position, Vector2? size = null, Rectangle? sourceRect = null, Paint? tint = null, float rotation = 0f, Vector2 origin = default, SpriteEffects effects = SpriteEffects.None, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, Vector2 position, Vector2? size = null, Rectangle? sourceRect = null, Paint? tint = null, float rotation = 0f, Vector2? origin = null, SpriteEffects effects = SpriteEffects.None, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
         Vector2 actualSize = size ?? new Vector2(texture.Width, texture.Height);
         if (actualSize.X <= 0 || actualSize.Y <= 0) return;
 
         Paint actualTint = tint ?? Paint.Solid(Color.White);
         if (actualTint.IsTransparent()) return;
-
-        actualTint = transformPaint(actualTint, position + origin, -origin, rotation, size);
+        var usedOrigin = origin ?? actualSize / 2;
+        actualTint = transformPaint(actualTint, position + usedOrigin, -usedOrigin, rotation, size);
 
         float minHalf = float.Min(actualSize.X, actualSize.Y) * 0.5f;
         rounding = float.Clamp(rounding, 0, minHalf);
@@ -1012,11 +1022,11 @@ public class GuilBatch {
 
         Vector2 transform(Vector2 p) {
             if (!hasRotation) return p;
-            float rx = p.X - (position.X + origin.X);
-            float ry = p.Y - (position.Y + origin.Y);
+            float rx = p.X - (position.X + usedOrigin.X);
+            float ry = p.Y - (position.Y + usedOrigin.Y);
             return new Vector2(
-                position.X + origin.X + rx * rotCos - ry * rotSin,
-                position.Y + origin.Y + rx * rotSin + ry * rotCos
+                position.X + usedOrigin.X + rx * rotCos - ry * rotSin,
+                position.Y + usedOrigin.Y + rx * rotSin + ry * rotCos
             );
         }
 
@@ -1072,7 +1082,7 @@ public class GuilBatch {
 
         if (aaSize != 0f) {
             aaSize /= CameraZoom;
-            Vector2 aaPivot = position + origin;
+            Vector2 aaPivot = position + usedOrigin;
             addTextureFringe(outCenters, outR, cornerSegments, actualTint, hasRotation, rotSin, rotCos, aaPivot, texIndex, position, actualSize, uvMin, uvMax, flipH, flipV, aaSize);
         }
     }
@@ -1081,7 +1091,7 @@ public class GuilBatch {
         DrawTexture(texture, position, null, null, paint, 0f, default, SpriteEffects.None, rounding, cornerQuality, aaSize);
     }
 
-    public void DrawTexture(Texture2D texture, Rectangle destinationRectangle, Paint paint, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, RectangleF destinationRectangle, Paint paint, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         DrawTexture(texture, new Vector2(destinationRectangle.X, destinationRectangle.Y), new Vector2(destinationRectangle.Width, destinationRectangle.Height), null, paint, 0f, default, SpriteEffects.None, rounding, cornerQuality, aaSize);
     }
 
@@ -1090,7 +1100,7 @@ public class GuilBatch {
         DrawTexture(texture, position, size, sourceRectangle, paint, 0f, default, SpriteEffects.None, rounding, cornerQuality, aaSize);
     }
 
-    public void DrawTexture(Texture2D texture, Rectangle destinationRectangle, Rectangle? sourceRectangle, Paint paint, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, RectangleF destinationRectangle, Rectangle? sourceRectangle, Paint paint, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         DrawTexture(texture, new Vector2(destinationRectangle.X, destinationRectangle.Y), new Vector2(destinationRectangle.Width, destinationRectangle.Height), sourceRectangle, paint, 0f, default, SpriteEffects.None, rounding, cornerQuality, aaSize);
     }
 
@@ -1104,7 +1114,7 @@ public class GuilBatch {
         DrawTexture(texture, position, srcSize * scale, sourceRectangle, paint, rotation, origin * scale, effects, rounding, cornerQuality, aaSize);
     }
 
-    public void DrawTexture(Texture2D texture, Rectangle destinationRectangle, Rectangle? sourceRectangle, Paint paint, float rotation, Vector2 origin, SpriteEffects effects, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, RectangleF destinationRectangle, Rectangle? sourceRectangle, Paint paint, float rotation, Vector2 origin, SpriteEffects effects, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         Vector2 srcSize = sourceRectangle.HasValue ? new Vector2(sourceRectangle.Value.Width, sourceRectangle.Value.Height) : new Vector2(texture.Width, texture.Height);
         Vector2 destSize = new(destinationRectangle.Width, destinationRectangle.Height);
         Vector2 scale = new(destSize.X / srcSize.X, destSize.Y / srcSize.Y);

@@ -107,7 +107,12 @@ public struct Paint {
         return this with { Start = End, End = Start, OffsetA = OffsetB, OffsetB = OffsetA };
     }
     public Paint HueShift(float dHue) {
+        if (dHue == 0) return this;
         return this with { ColorA = ShiftHue(ColorA, dHue), ColorB = ShiftHue(ColorB, dHue) };
+    }
+    public Paint HueShift(float dHueA, float dHueB) {
+        if (dHueA == 0 && dHueB == 0) return this;
+        return this with { ColorA = ShiftHue(ColorA, dHueA), ColorB = ShiftHue(ColorB, dHueB) };
     }
 
     public static Color ShiftHue(Color c, float degrees) {
