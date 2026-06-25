@@ -17,92 +17,100 @@ public sealed class GuilFont : IDisposable {
     public float LineSpacing { get; set; } = 5;
 
     public GuilFont(GraphicsDevice graphics, GuilBatch batch, string guifFilePath) {
-        var tempFolder = Path.Combine(Path.GetTempPath(), $"DFTemp_{Guid.NewGuid()}");
+        using var archive = ZipFile.OpenRead(guifFilePath);
 
-        try {
-            ZipFile.ExtractToDirectory(guifFilePath, tempFolder);
-            var metadataPath = Path.Combine(tempFolder, "metadata");
-            if (!File.Exists(metadataPath))
-                throw new Exception("Font file is missing metadata.");
+        string? readEntryText(string entryName) {
+            var entry = archive.GetEntry(entryName);
+            if (entry == null) return null;
+            using var stream = entry.Open();
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
 
-            var sizes = File.ReadAllText(metadataPath).Replace("sizes:", "").Trim()
-                .Split(',').Select(s => int.Parse(s.Trim())).OrderBy(s => s);
+        Texture2D? readEntryTexture(string entryName) {
+            var entry = archive.GetEntry(entryName);
+            if (entry == null) return null;
+            using var entryStream = entry.Open();
+            using var memStream = new MemoryStream();
+            entryStream.CopyTo(memStream);
+            memStream.Position = 0;
+            return Texture2D.FromStream(graphics, memStream);
+        }
 
-            List<(int stripH, char c, int sx, int w, Texture2D stripTex)> glyphsToPack = [];
-            List<Texture2D> stripTextures = [];
+        var metadataText = readEntryText("metadata")
+            ?? throw new Exception("Font file is missing metadata.");
 
-            foreach (var nominalSize in sizes) {
-                var atlasPath = Path.Combine(tempFolder, $"atlas_{nominalSize}");
-                var charsDataPath = Path.Combine(tempFolder, $"chars_data_{nominalSize}");
-                if (!File.Exists(atlasPath) || !File.Exists(charsDataPath)) continue;
+        var sizes = metadataText.Replace("sizes:", "").Trim()
+            .Split(',').Select(s => int.Parse(s.Trim())).OrderBy(s => s);
 
-                Texture2D stripTex;
-                using (var stream = File.OpenRead(atlasPath))
-                    stripTex = Texture2D.FromStream(graphics, stream);
-                stripTextures.Add(stripTex);
+        List<(int stripH, char c, int sx, int w, Texture2D stripTex)> glyphsToPack = [];
+        List<Texture2D> stripTextures = [];
 
-                var charIntPairs = File.ReadAllText(charsDataPath).Split('\n');
-                foreach (var cip in charIntPairs) {
-                    if (string.IsNullOrWhiteSpace(cip)) continue;
-                    var parts = cip.Split(' ');
-                    var c = parts[0][0];
-                    var sx = int.Parse(parts[1]);
-                    var w = int.Parse(parts[2]);
-                    glyphsToPack.Add((stripTex.Height, c, sx, w, stripTex));
-                }
+        foreach (var nominalSize in sizes) {
+            var stripTex = readEntryTexture($"atlas_{nominalSize}");
+            var charsDataText = readEntryText($"chars_data_{nominalSize}");
+            if (stripTex == null || charsDataText == null) continue;
+
+            stripTextures.Add(stripTex);
+
+            var charIntPairs = charsDataText.Split('\n');
+            foreach (var cip in charIntPairs) {
+                if (string.IsNullOrWhiteSpace(cip)) continue;
+                var parts = cip.Split(' ');
+                var c = parts[0][0];
+                var sx = int.Parse(parts[1]);
+                var w = int.Parse(parts[2]);
+                glyphsToPack.Add((stripTex.Height, c, sx, w, stripTex));
+            }
+        }
+
+        if (glyphsToPack.Count == 0) throw new Exception("No valid atlases found.");
+
+        glyphsToPack.Sort((a, b) => b.stripH.CompareTo(a.stripH));
+
+        var padding = 2;
+        var currentX = padding;
+        var currentY = padding;
+        var currentRowHeight = 0;
+        var megaWidth = 2048;
+
+        List<(int stripH, char c, int x, int y, int w, Texture2D stripTex, int sx)> packedGlyphs = [];
+
+        foreach (var g in glyphsToPack) {
+            if (currentX + g.w + padding > megaWidth) {
+                currentX = padding;
+                currentY += currentRowHeight + padding;
+                currentRowHeight = 0;
             }
 
-            if (glyphsToPack.Count == 0) throw new Exception("No valid atlases found.");
+            packedGlyphs.Add((g.stripH, g.c, currentX, currentY, g.w, g.stripTex, g.sx));
+            currentX += g.w + padding;
+            currentRowHeight = int.Max(currentRowHeight, g.stripH);
+        }
 
-            glyphsToPack.Sort((a, b) => b.stripH.CompareTo(a.stripH));
+        var megaHeight = currentY + currentRowHeight + padding;
 
-            var padding = 2;
-            var currentX = padding;
-            var currentY = padding;
-            var currentRowHeight = 0;
-            var megaWidth = 2048;
+        var renderTarget = new RenderTarget2D(graphics, megaWidth, megaHeight);
+        graphics.SetRenderTarget(renderTarget);
+        graphics.Clear(Color.Transparent);
+        batch.Begin(blendState: BlendState.NonPremultiplied);
+        foreach (var g in packedGlyphs)
+            batch.DrawTexture(g.stripTex, new Vector2(g.x, g.y), new Rectangle(g.sx, 0, g.w, g.stripH), Color.White, aaSize: 0);
+        batch.End();
+        graphics.SetRenderTarget(null);
+        MegaAtlas = renderTarget;
 
-            List<(int stripH, char c, int x, int y, int w, Texture2D stripTex, int sx)> packedGlyphs = [];
+        foreach (var tex in stripTextures) tex.Dispose();
 
-            foreach (var g in glyphsToPack) {
-                if (currentX + g.w + padding > megaWidth) {
-                    currentX = padding;
-                    currentY += currentRowHeight + padding;
-                    currentRowHeight = 0;
-                }
-
-                packedGlyphs.Add((g.stripH, g.c, currentX, currentY, g.w, g.stripTex, g.sx));
-                currentX += g.w + padding;
-                currentRowHeight = int.Max(currentRowHeight, g.stripH);
+        var grouped = packedGlyphs.GroupBy(g => g.stripH).OrderBy(g => g.Key);
+        foreach (var group in grouped) {
+            var atlasData = new AtlasData { Size = group.Key };
+            foreach (var g in group) {
+                atlasData.CharsData[g.c] = (g.x, g.y, g.w);
             }
-
-            var megaHeight = currentY + currentRowHeight + padding;
-
-            var renderTarget = new RenderTarget2D(graphics, megaWidth, megaHeight);
-            graphics.SetRenderTarget(renderTarget);
-            graphics.Clear(Color.Transparent);
-            batch.Begin(blendState: BlendState.NonPremultiplied);
-            foreach (var g in packedGlyphs)
-                batch.DrawTexture(g.stripTex, new Vector2(g.x, g.y), new Rectangle(g.sx, 0, g.w, g.stripH), Color.White, aaSize: 0);
-            batch.End();
-            graphics.SetRenderTarget(null);
-            MegaAtlas = renderTarget;
-
-            foreach (var tex in stripTextures) tex.Dispose();
-
-            var grouped = packedGlyphs.GroupBy(g => g.stripH).OrderBy(g => g.Key);
-            foreach (var group in grouped) {
-                var atlasData = new AtlasData { Size = group.Key };
-                foreach (var g in group) {
-                    atlasData.CharsData[g.c] = (g.x, g.y, g.w);
-                }
-                _atlases.Add(atlasData);
-            }
-        } finally {
-            if (Directory.Exists(tempFolder)) Directory.Delete(tempFolder, true);
+            _atlases.Add(atlasData);
         }
     }
-
     public float GetSpacing(float height) {
         return Spacing * height / 120f;
     }
