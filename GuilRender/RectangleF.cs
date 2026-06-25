@@ -136,6 +136,9 @@ public struct RectangleF : IEquatable<RectangleF> {
     public static RectangleF FromEllipse(Vector2 center, Vector2 radius) {
         return FromEllipse(center, radius.X, radius.Y);
     }
+    public static RectangleF FromLTRB(float left, float top, float right, float bottom) {
+        return new RectangleF(left, top, right - left, bottom - top);
+    }
     public readonly bool Contains(Point point) {
         return _x <= point.X && point.X < _x + _width && _y <= point.Y && point.Y < _y + _height;
     }

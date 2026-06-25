@@ -146,7 +146,7 @@ class GuilFontPackerUI:
         
         self.text_box = scrolledtext.ScrolledText(self.root, width=70, height=10, wrap=tk.WORD, font=("Arial", 10), undo=True)
         self.text_box.pack(pady=5, padx=20)
-        default_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+        default_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~¬"
         self.text_box.insert("1.0", default_chars)
         
         # Font sizes section with checkboxes

@@ -94,7 +94,7 @@ public struct Paint {
             Type = amount < 1 ? a.Type : b.Type,
             Easing = amount < 1 ? a.Easing : b.Easing,
             IsLocal = amount < 1 ? a.IsLocal : b.IsLocal,
-            EasingPower = MathHelper.Lerp(a.EasingPower, b.EasingPower, amount),
+            EasingPower = float.Lerp(a.EasingPower, b.EasingPower, amount),
             ColorA = Color.Lerp(a.ColorA, b.ColorA, amount),
             ColorB = Color.Lerp(a.ColorB, b.ColorB, amount),
             Start = Vector2.Lerp(a.Start, b.Start, amount),
@@ -117,8 +117,8 @@ public struct Paint {
 
     public static Color ShiftHue(Color c, float degrees) {
         float r = c.R / 255f, g = c.G / 255f, b = c.B / 255f;
-        float max = MathF.Max(r, MathF.Max(g, b));
-        float min = MathF.Min(r, MathF.Min(g, b));
+        float max = float.Max(r, float.Max(g, b));
+        float min = float.Min(r, float.Min(g, b));
         float delta = max - min;
 
         float h = 0f;
@@ -136,7 +136,7 @@ public struct Paint {
         if (h < 0f) h += 360f;
 
         float chroma = v * s;
-        float x = chroma * (1f - MathF.Abs((h / 60f) % 2f - 1f));
+        float x = chroma * (1f - float.Abs((h / 60f) % 2f - 1f));
         float m = v - chroma;
 
         float rr, gg, bb;
