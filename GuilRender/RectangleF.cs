@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 
 namespace Guilred.Shapes;
 
@@ -119,10 +120,10 @@ public struct RectangleF : IEquatable<RectangleF> {
 
     public readonly Rectangle ToRectangle() {
         return new Rectangle(
-            (int)Math.Round(_x),
-            (int)Math.Round(_y),
-            (int)Math.Round(_width),
-            (int)Math.Round(_height)
+            (int)float.Round(_x),
+            (int)float.Round(_y),
+            (int)float.Round(_width),
+            (int)float.Round(_height)
         );
     }
     public static RectangleF FromCircle(Vector2 center, float radius) {
@@ -171,13 +172,13 @@ public struct RectangleF : IEquatable<RectangleF> {
     public readonly bool Intersects(RectangleF value, out RectangleF? result) {
         if (value._x < _x + _width && _x < value._x + value._width &&
             value._y < _y + _height && _y < value._y + value._height) {
-            float resultX = Math.Max(_x, value._x);
-            float resultY = Math.Max(_y, value._y);
+            float resultX = float.Max(_x, value._x);
+            float resultY = float.Max(_y, value._y);
             result = new RectangleF(
                 resultX,
                 resultY,
-                Math.Min(_x + _width, value._x + value._width) - resultX,
-                Math.Min(_y + _height, value._y + value._height) - resultY
+                float.Min(_x + _width, value._x + value._width) - resultX,
+                float.Min(_y + _height, value._y + value._height) - resultY
             );
             return true;
         }
@@ -188,13 +189,13 @@ public struct RectangleF : IEquatable<RectangleF> {
     public readonly RectangleF? GetIntersection(RectangleF value) {
         if (value._x < _x + _width && _x < value._x + value._width &&
             value._y < _y + _height && _y < value._y + value._height) {
-            float resultX = Math.Max(_x, value._x);
-            float resultY = Math.Max(_y, value._y);
+            float resultX = float.Max(_x, value._x);
+            float resultY = float.Max(_y, value._y);
             return new RectangleF(
                 resultX,
                 resultY,
-                Math.Min(_x + _width, value._x + value._width) - resultX,
-                Math.Min(_y + _height, value._y + value._height) - resultY
+                float.Min(_x + _width, value._x + value._width) - resultX,
+                float.Min(_y + _height, value._y + value._height) - resultY
             );
         }
 
@@ -215,12 +216,12 @@ public struct RectangleF : IEquatable<RectangleF> {
         };
     }
     public static RectangleF Union(RectangleF value1, RectangleF value2) {
-        float x = Math.Min(value1._x, value2._x);
-        float y = Math.Min(value1._y, value2._y);
+        float x = float.Min(value1._x, value2._x);
+        float y = float.Min(value1._y, value2._y);
         return new RectangleF(
             x, y,
-            Math.Max(value1._x + value1._width, value2._x + value2._width) - x,
-            Math.Max(value1._y + value1._height, value2._y + value2._height) - y
+            float.Max(value1._x + value1._width, value2._x + value2._width) - x,
+            float.Max(value1._y + value1._height, value2._y + value2._height) - y
         );
     }
     public static RectangleF FromRectangle(Rectangle rectangle) {
@@ -464,10 +465,10 @@ public struct RectangleF : IEquatable<RectangleF> {
         return new RectangleF(newX, newY, newWidth, newHeight);
     }
     public static bool CloseEnough(RectangleF a, RectangleF b, float tolerance = 2f) {
-        return Math.Abs(a.X - b.X) <= tolerance &&
-               Math.Abs(a.Y - b.Y) <= tolerance &&
-               Math.Abs(a.Width - b.Width) <= tolerance &&
-               Math.Abs(a.Height - b.Height) <= tolerance;
+        return float.Abs(a.X - b.X) <= tolerance &&
+               float.Abs(a.Y - b.Y) <= tolerance &&
+               float.Abs(a.Width - b.Width) <= tolerance &&
+               float.Abs(a.Height - b.Height) <= tolerance;
     }
 
     public readonly bool Equals(RectangleF other) {
