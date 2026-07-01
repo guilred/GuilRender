@@ -391,6 +391,17 @@ public struct RectangleF : IEquatable<RectangleF> {
         (Scaled._width, Scaled._height) = (newWidth, newHeight);
         return Scaled;
     }
+    public readonly RectangleF GetScaled(float scaleX, float scaleY) {
+        if (scaleX == 1 && scaleY == 1) return this;
+        RectangleF Scaled = this;
+        Vector2 center = Center;
+        float newWidth = Width * scaleX;
+        float newHeight = Height * scaleY;
+        Scaled._x = center.X - newWidth / 2.0f;
+        Scaled._y = center.Y - newHeight / 2.0f;
+        (Scaled._width, Scaled._height) = (newWidth, newHeight);
+        return Scaled;
+    }
     public readonly RectangleF GetScaled(float scale) {
         if (scale == 1) return this;
         RectangleF Scaled = this;
@@ -494,4 +505,5 @@ public struct RectangleF : IEquatable<RectangleF> {
     public static bool operator !=(RectangleF a, RectangleF b) {
         return !a.Equals(b);
     }
+    public static implicit operator RectangleF(Rectangle rect) => FromRectangle(rect);
 }

@@ -987,7 +987,7 @@ public class GuilBatch {
             _indices[_indexCount++] = (short)v2;
         }
     }
-    public void DrawTexture(Texture2D texture, Vector2 position, Vector2? size = null, Rectangle? sourceRect = null, Paint? tint = null, float rotation = 0f, Vector2? origin = null, SpriteEffects effects = SpriteEffects.None, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, Vector2 position, Vector2? size = null, RectangleF? sourceRect = null, Paint? tint = null, float rotation = 0f, Vector2? origin = null, SpriteEffects effects = SpriteEffects.None, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
         Vector2 actualSize = size ?? new Vector2(texture.Width, texture.Height);
         if (actualSize.X <= 0 || actualSize.Y <= 0) return;
@@ -1098,26 +1098,26 @@ public class GuilBatch {
         DrawTexture(texture, new Vector2(destinationRectangle.X, destinationRectangle.Y), new Vector2(destinationRectangle.Width, destinationRectangle.Height), null, paint, 0f, default, SpriteEffects.None, rounding, cornerQuality, aaSize);
     }
 
-    public void DrawTexture(Texture2D texture, Vector2 position, Rectangle? sourceRectangle, Paint paint, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, Vector2 position, RectangleF? sourceRectangle, Paint paint, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         Vector2 size = sourceRectangle.HasValue ? new Vector2(sourceRectangle.Value.Width, sourceRectangle.Value.Height) : new Vector2(texture.Width, texture.Height);
         DrawTexture(texture, position, size, sourceRectangle, paint, 0f, default, SpriteEffects.None, rounding, cornerQuality, aaSize);
     }
 
-    public void DrawTexture(Texture2D texture, RectangleF destinationRectangle, Rectangle? sourceRectangle, Paint paint, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, RectangleF destinationRectangle, RectangleF? sourceRectangle, Paint paint, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         DrawTexture(texture, new Vector2(destinationRectangle.X, destinationRectangle.Y), new Vector2(destinationRectangle.Width, destinationRectangle.Height), sourceRectangle, paint, 0f, default, SpriteEffects.None, rounding, cornerQuality, aaSize);
     }
 
-    public void DrawTexture(Texture2D texture, Vector2 position, Rectangle? sourceRectangle, Paint paint, float rotation, Vector2 origin, float scale, SpriteEffects effects, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, Vector2 position, RectangleF? sourceRectangle, Paint paint, float rotation, Vector2 origin, float scale, SpriteEffects effects, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         Vector2 srcSize = sourceRectangle.HasValue ? new Vector2(sourceRectangle.Value.Width, sourceRectangle.Value.Height) : new Vector2(texture.Width, texture.Height);
         DrawTexture(texture, position, srcSize * scale, sourceRectangle, paint, rotation, origin * scale, effects, rounding, cornerQuality, aaSize);
     }
 
-    public void DrawTexture(Texture2D texture, Vector2 position, Rectangle? sourceRectangle, Paint paint, float rotation, Vector2 origin, Vector2 scale, SpriteEffects effects, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, Vector2 position, RectangleF? sourceRectangle, Paint paint, float rotation, Vector2 origin, Vector2 scale, SpriteEffects effects, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         Vector2 srcSize = sourceRectangle.HasValue ? new Vector2(sourceRectangle.Value.Width, sourceRectangle.Value.Height) : new Vector2(texture.Width, texture.Height);
         DrawTexture(texture, position, srcSize * scale, sourceRectangle, paint, rotation, origin * scale, effects, rounding, cornerQuality, aaSize);
     }
 
-    public void DrawTexture(Texture2D texture, RectangleF destinationRectangle, Rectangle? sourceRectangle, Paint paint, float rotation, Vector2 origin, SpriteEffects effects, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawTexture(Texture2D texture, RectangleF destinationRectangle, RectangleF? sourceRectangle, Paint paint, float rotation, Vector2 origin, SpriteEffects effects, float rounding = 0f, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
         Vector2 srcSize = sourceRectangle.HasValue ? new Vector2(sourceRectangle.Value.Width, sourceRectangle.Value.Height) : new Vector2(texture.Width, texture.Height);
         Vector2 destSize = new(destinationRectangle.Width, destinationRectangle.Height);
         Vector2 scale = new(destSize.X / srcSize.X, destSize.Y / srcSize.Y);
