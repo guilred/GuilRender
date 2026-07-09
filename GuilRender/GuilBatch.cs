@@ -1083,7 +1083,7 @@ public class GuilBatch {
             }
         }
 
-        if (aaSize != 0f) {
+        if (rounding > 0 && aaSize != 0f) {
             aaSize /= CameraZoom;
             Vector2 aaPivot = position + usedOrigin;
             addTextureFringe(outCenters, outR, cornerSegments, actualTint, hasRotation, rotSin, rotCos, aaPivot, texIndex, position, actualSize, uvMin, uvMax, flipH, flipV, aaSize);
