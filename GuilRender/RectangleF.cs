@@ -417,20 +417,16 @@ public struct RectangleF : IEquatable<RectangleF> {
     public readonly RectangleF GetFitAndCentered(float aspectRatio) {
         return FitAndCenter(this, aspectRatio);
     }
+    public readonly RectangleF GetFitAndAligned(float aspectRatio, Anchor alignment = Anchor.Center) {
+        return FitAndAlign(this, aspectRatio, alignment);
+    }
     public static RectangleF FitAndCenter(RectangleF bounds, float aspectRatio) {
-        float boundsAspect = bounds.Width / bounds.Height;
-        float width, height;
-        if (boundsAspect > aspectRatio) {
-            height = bounds.Height;
-            width = height * aspectRatio;
-        }
-        else {
-            width = bounds.Width;
-            height = width / aspectRatio;
-        }
-        float x = bounds.X + (bounds.Width - width) / 2f;
-        float y = bounds.Y + (bounds.Height - height) / 2f;
-        return new RectangleF(x, y, width, height);
+        bounds.FitAndCenter(aspectRatio);
+        return bounds;
+    }
+    public static RectangleF FitAndAlign(RectangleF bounds, float aspectRatio, Anchor alignment = Anchor.Center) {
+        bounds.FitAndAlign(aspectRatio, alignment);
+        return bounds;
     }
     public static RectangleF Offset(RectangleF rectangle, Point amount) {
         return new(rectangle._x + amount.X, rectangle._y + amount.Y, rectangle._width, rectangle._height);
