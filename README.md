@@ -12,7 +12,7 @@ A collection of rendering tools I built while developing my UI framework — org
 A rendering class built around aggressive batching, offering an interface very similar to MonoGame's `SpriteBatch`. Everything — clipping, gradients, shape data — is baked directly into the vertices, keeping draw calls minimal.
 
 **Supports:**
-- Rectangles, Lines, Circles, Arcs
+- Rectangles, Lines, Circles, Arcs, Ellipses
 - Textures
 - Gradients (baked into vertices)
 - Clipping (baked into vertices)
