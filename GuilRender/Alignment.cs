@@ -10,6 +10,7 @@ public enum YAlignment {
 public record struct Alignment(XAlignment xAlignment = XAlignment.Left, YAlignment yAlignment = YAlignment.Top, XAlignment textAlignment = XAlignment.Left) {
     public Alignment(YAlignment yAlignment) : this(XAlignment.Left, yAlignment, XAlignment.Left) { }
 
+    public static readonly Alignment TopLeft = new(XAlignment.Left, YAlignment.Top);
     public static readonly Alignment Centered = new(XAlignment.Center, YAlignment.Center);
     public static readonly Alignment TopCentered = new(XAlignment.Center, YAlignment.Top);
     public static readonly Alignment BottomCentered = new(XAlignment.Center, YAlignment.Bottom);
