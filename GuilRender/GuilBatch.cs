@@ -10,8 +10,8 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Guilred.Rendering;
 
 public class GuilBatch {
-    private const int _maxVertices = 8192;
-    private const int _maxIndices = _maxVertices * 3;
+    private const int MaxVertices = 8192;
+    private const int MaxIndices = MaxVertices * 3;
 
     private readonly GraphicsDevice _device;
 
@@ -29,8 +29,8 @@ public class GuilBatch {
     private readonly DynamicVertexBuffer _vertexBuffer;
     private readonly DynamicIndexBuffer _indexBuffer;
 
-    private readonly PrimitiveVertex[] _vertices = new PrimitiveVertex[_maxVertices];
-    private readonly short[] _indices = new short[_maxIndices];
+    private readonly PrimitiveVertex[] _vertices = new PrimitiveVertex[MaxVertices];
+    private readonly short[] _indices = new short[MaxIndices];
     private int _vertexCount;
     private int _indexCount;
 
@@ -60,8 +60,8 @@ public class GuilBatch {
         _projectionParam = _effect.Parameters["Projection"];
         _clipSmoothingParam = _effect.Parameters["clipSmoothing"];
 
-        _vertexBuffer = new DynamicVertexBuffer(device, PrimitiveVertex.VertexDeclaration, _maxVertices, BufferUsage.WriteOnly);
-        _indexBuffer = new DynamicIndexBuffer(device, IndexElementSize.SixteenBits, _maxIndices, BufferUsage.WriteOnly);
+        _vertexBuffer = new DynamicVertexBuffer(device, PrimitiveVertex.VertexDeclaration, MaxVertices, BufferUsage.WriteOnly);
+        _indexBuffer = new DynamicIndexBuffer(device, IndexElementSize.SixteenBits, MaxIndices, BufferUsage.WriteOnly);
     }
     public void Begin(Matrix? view = null, Matrix? projection = null, BlendState? blendState = null, SamplerState? samplerState = null, float? clipSmoothing = null) {
         if (_begun) throw new InvalidOperationException("Guilbatch is already begun.");
@@ -102,8 +102,8 @@ public class GuilBatch {
         if (!maintainClipRects) {
             _clipStack.Clear();
         }
-        else if (_clipStack.Count > _maxClips) {
-            while (_clipStack.Count > _maxClips) {
+        else if (_clipStack.Count > MaxClips) {
+            while (_clipStack.Count > MaxClips) {
                 _clipStack.Pop();
             }
         }
@@ -155,14 +155,14 @@ public class GuilBatch {
     }
 
     private void ensureCapacity(int verticesToAdd, int indicesToAdd) {
-        if (_vertexCount + verticesToAdd > _maxVertices || _indexCount + indicesToAdd > _maxIndices) {
+        if (_vertexCount + verticesToAdd > MaxVertices || _indexCount + indicesToAdd > MaxIndices) {
             flush();
         }
     }
 
     private record struct ClipState(Vector4 Rect, Vector2 Params);
 
-    private const int _maxClips = 2048;
+    private const int MaxClips = 2048;
     private readonly Stack<ClipState> _clipStack = new();
     private ClipState _currentClip = new() { Rect = Vector4.Zero, Params = Vector2.Zero };
     private ClipState? _previousClip;
