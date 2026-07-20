@@ -471,6 +471,8 @@ public struct RectangleF : IEquatable<RectangleF> {
         float newHeight = A.Height + (B.Height - A.Height) * t;
         return new RectangleF(newX, newY, newWidth, newHeight);
     }
+    public static RectangleF FromWidth(float width) => new(0, 0, width, 0);
+    public static RectangleF FromHeight(float height) => new(0, 0, 0, height);
     public static bool CloseEnough(RectangleF a, RectangleF b, float tolerance = 2f) {
         return float.Abs(a.X - b.X) <= tolerance &&
                float.Abs(a.Y - b.Y) <= tolerance &&
