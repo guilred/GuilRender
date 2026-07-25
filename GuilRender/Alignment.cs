@@ -18,7 +18,6 @@ public struct Alignment(XAlignment xAlignment = XAlignment.Left, YAlignment yAli
 
     public static readonly Alignment TopLeft = new(XAlignment.Left, YAlignment.Top);
     public static readonly Alignment Centered = new(XAlignment.Center, YAlignment.Center, XAlignment.Center);
-    public static readonly Alignment Centered2 = new(XAlignment.Center, YAlignment.Center, XAlignment.Left);
     public static readonly Alignment TopCentered = new(XAlignment.Center, YAlignment.Top);
     public static readonly Alignment BottomCentered = new(XAlignment.Center, YAlignment.Bottom);
     public static readonly Alignment LeftCentered = new(XAlignment.Left, YAlignment.Center);

@@ -1,4 +1,5 @@
 ﻿#nullable disable
+using Guilred.Input;
 using Guilred.Rendering;
 using Guilred.Shapes;
 using Microsoft.Xna.Framework;
@@ -19,6 +20,7 @@ public class Tests : Game {
     private Texture2D _dg;
     private Texture2D _pixel;
     private RenderTarget2D _mid;
+    public InputManager input;
     public Tests() {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
@@ -30,6 +32,7 @@ public class Tests : Game {
         _graphics.SynchronizeWithVerticalRetrace = false;
         IsFixedTimeStep = false;
         _graphics.ApplyChanges();
+        input = new(Window);
 
         base.Initialize();
     }
@@ -37,7 +40,7 @@ public class Tests : Game {
     protected override void LoadContent() {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _guilBatch = new GuilBatch(GraphicsDevice);
-        _guilFont = new GuilFont(GraphicsDevice, _guilBatch, "Content/FreckleFace.guif");
+        _guilFont = new GuilFont(GraphicsDevice, _guilBatch, "Content/FreckleFace.guif", GraphicsDevice.GraphicsProfile);
         _mg = Content.Load<Texture2D>("mg");
         _gr = Content.Load<Texture2D>("gr");
         _dg = Content.Load<Texture2D>("doggo");
@@ -45,19 +48,17 @@ public class Tests : Game {
         _pixel.SetData([Color.White]);
         _mid = new RenderTarget2D(GraphicsDevice, 1600, 900);
     }
+    private Alignment _alignment => Alignment.Centered with { textAlignment = XAlignment.Center, xAlignment = XAlignment.Left };
     private bool _zoomed;
-    private bool _pressed;
     private (int col, int ln) _lastClickIndex;
     protected override void Update(GameTime gameTime) {
         if (Keyboard.GetState().IsKeyDown(Keys.F1))
             Exit();
-        if (!_zoomed && Keyboard.GetState().IsKeyDown(Keys.Q)) {
-            _zoomed = true;
+        input.Update(gameTime.ElapsedGameTime.Seconds, IsActive);
+        if (input.Key(Keys.Q).Tapped()) {
+            _zoomed = !_zoomed;
         }
-        else if (_zoomed && Keyboard.GetState().IsKeyDown(Keys.A)) {
-            _zoomed = false;
-        }
-        if (Mouse.GetState().LeftButton == ButtonState.Pressed) {
+        if (input.Mouse(MouseButton.Left).Held()) {
             var mpos = Mouse.GetState().Position.ToVector2();
             var screenSize = new Vector2(1600, 900);
             var text = "Your are in a dreeeeeeeeeeeeeeeeeeammmmmmmm";
@@ -65,7 +66,7 @@ public class Tests : Game {
                 text,
                 screenSize / 2, mpos, 30,
                 screenSize.X / 2 + 300,
-                alignment: Alignment.Centered2
+                alignment: _alignment
             );
         }
 
@@ -183,7 +184,7 @@ public class Tests : Game {
             _guilBatch.FillRectangle(Vector2.Zero, screenSize, vig);
 
 
-            var mouseDown = Mouse.GetState().LeftButton == ButtonState.Pressed;
+            var mouseDown = input.Mouse(MouseButton.Left).Held();
             var text = "Your are in a dreeeeeeeeeeeeeeeeeeammmmmmmm" + (mouseDown ? null : new string('m', (int)(25f * (1f - MathF.Cos(time * MathF.PI)))));
             var textSize = 30 + (mouseDown ? 0 : 15 * Random.Shared.NextSingle());
             var wrapX = screenSize.X / 2 + 300 + (mouseDown ? 0 : 150 * Random.Shared.NextSingle());
@@ -196,14 +197,14 @@ public class Tests : Game {
                 text,
                 screenSize / 2,
                 textP, textSize, wrapX,
-                alignment: Alignment.Centered2
+                alignment: _alignment
             );
 
             var clickPos = _guilFont.GetPositionAtWrapped(
                 text, screenSize / 2,
                 _lastClickIndex,
                 textSize, wrapX,
-                alignment: Alignment.Centered2
+                alignment: _alignment
             );
             _guilBatch.FillLine(clickPos, clickPos + Vector2.UnitY * 30, Color.Red, 1);
             _guilBatch.FillCircle(screenSize / 2, Color.Red, 4);

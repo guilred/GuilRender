@@ -644,8 +644,8 @@ public sealed class GuilFont : IDisposable {
                     var visibleLine = subLine.EndsWith(" ") && !subLine.EndsWith("  ") ? subLine.TrimEnd(" ") : subLine;
                     var lineWidth = MeasureString(visibleLine, height, spacing, null).X;
                     var lineStartX = position.X;
-                    if (alignment.xAlignment == XAlignment.Center) lineStartX += (totalSizeX - lineWidth) / 2;
-                    else if (alignment.xAlignment == XAlignment.Right) lineStartX += totalSizeX - lineWidth;
+                    if (alignment.textAlignment == XAlignment.Center) lineStartX += (totalSizeX - lineWidth) / 2;
+                    else if (alignment.textAlignment == XAlignment.Right) lineStartX += totalSizeX - lineWidth;
 
                     var col = segStart + GetIndexAt(subLine, lineStartX, clickPos.X, height, spacing);
                     return (col, j);
@@ -700,8 +700,8 @@ public sealed class GuilFont : IDisposable {
                     var visibleLine = subLine.EndsWith(" ") && !subLine.EndsWith("  ") ? subLine.TrimEnd(' ') : subLine;
                     var lineWidth = MeasureString(visibleLine, height, spacing, null).X;
                     var lineStartX = position.X;
-                    if (alignment.xAlignment == XAlignment.Center) lineStartX += (totalSizeX - lineWidth) / 2;
-                    else if (alignment.xAlignment == XAlignment.Right) lineStartX += totalSizeX - lineWidth;
+                    if (alignment.textAlignment == XAlignment.Center) lineStartX += (totalSizeX - lineWidth) / 2;
+                    else if (alignment.textAlignment == XAlignment.Right) lineStartX += totalSizeX - lineWidth;
 
                     var col = segStart + GetIndexAt(subLine, lineStartX, clickPos.X, height, spacing);
                     return (col, j);
@@ -778,8 +778,8 @@ public sealed class GuilFont : IDisposable {
         var visibleLine = subLine.EndsWith(" ") && !subLine.EndsWith("  ") ? subLine.TrimEnd(' ') : subLine;
         var lineWidth = MeasureString(visibleLine, height, spacing, null).X;
         var currX = position.X;
-        if (alignment.xAlignment == XAlignment.Center) currX += (totalSizeX - lineWidth) / 2;
-        else if (alignment.xAlignment == XAlignment.Right) currX += totalSizeX - lineWidth;
+        if (alignment.textAlignment == XAlignment.Center) currX += (totalSizeX - lineWidth) / 2;
+        else if (alignment.textAlignment == XAlignment.Right) currX += totalSizeX - lineWidth;
 
         currX += MeasureString(targetLineSpan, height, spacing, null, segStart, index.col - segStart).X;
         return new Vector2(currX + ctx.Spacing / 2, currY);
@@ -829,8 +829,8 @@ public sealed class GuilFont : IDisposable {
 
         var visibleLine = subLine.EndsWith(" ") && !subLine.EndsWith("  ") ? subLine.TrimEnd(" ") : subLine;
         var lineWidth = MeasureString(visibleLine, height, spacing, null).X; var currX = position.X;
-        if (alignment.xAlignment == XAlignment.Center) currX += (wrapX - position.X - lineWidth) / 2;
-        else if (alignment.xAlignment == XAlignment.Right) currX += totalSizeX - lineWidth;
+        if (alignment.textAlignment == XAlignment.Center) currX += (wrapX - position.X - lineWidth) / 2;
+        else if (alignment.textAlignment == XAlignment.Right) currX += totalSizeX - lineWidth;
 
         currX += MeasureString(span, height, spacing, null, segStart, index.col - segStart).X;
         return new Vector2(currX + (index.col > 0 ? ctx.Spacing / 2 : -ctx.Spacing / 2), currY);
@@ -872,8 +872,8 @@ public sealed class GuilFont : IDisposable {
                     var lineWidth = MeasureString(subLine, height, spacing, null).X;
 
                     var lineStartX = position.X;
-                    if (alignment.xAlignment == XAlignment.Center) lineStartX += (totalSizeX - lineWidth) / 2;
-                    else if (alignment.xAlignment == XAlignment.Right) lineStartX -= lineWidth - totalSizeX;
+                    if (alignment.textAlignment == XAlignment.Center) lineStartX += (totalSizeX - lineWidth) / 2;
+                    else if (alignment.textAlignment == XAlignment.Right) lineStartX -= lineWidth - totalSizeX;
 
                     var x1 = lineStartX + ((j == start.ln && start.col > subStart)
                         ? MeasureString(span, height, spacing, null, subStart, start.col - subStart).X + ctx.Spacing / 2

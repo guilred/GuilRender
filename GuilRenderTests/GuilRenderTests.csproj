@@ -27,6 +27,7 @@
     <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\GuilUI\InputManager\InputManager.csproj" />
     <ProjectReference Include="..\GuilRender\GuilRender.csproj" />
   </ItemGroup>
   <ItemGroup>

@@ -2,6 +2,7 @@
   <Project Path="../GuilUI/GuilUI/GuilUI.csproj">
     <Build Solution="Debug|*" Project="false" />
   </Project>
+  <Project Path="../GuilUI/InputManager/InputManager.csproj" />
   <Project Path="GuilRender/GuilRender.csproj" />
   <Project Path="GuilRenderTests/GuilRenderTests.csproj" />
 </Solution>
