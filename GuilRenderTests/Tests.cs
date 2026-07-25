@@ -48,7 +48,7 @@ public class Tests : Game {
         _pixel.SetData([Color.White]);
         _mid = new RenderTarget2D(GraphicsDevice, 1600, 900);
     }
-    private Alignment _alignment => Alignment.Centered with { textAlignment = XAlignment.Center, xAlignment = XAlignment.Left };
+    private static Alignment _alignment => Alignment.Centered;
     private bool _zoomed;
     private (int col, int ln) _lastClickIndex;
     protected override void Update(GameTime gameTime) {
@@ -200,13 +200,13 @@ public class Tests : Game {
                 alignment: _alignment
             );
 
-            var clickPos = _guilFont.GetPositionAtWrapped(
+            var indexPos = _guilFont.GetPositionAtWrapped(
                 text, screenSize / 2,
                 _lastClickIndex,
                 textSize, wrapX,
                 alignment: _alignment
             );
-            _guilBatch.FillLine(clickPos, clickPos + Vector2.UnitY * 30, Color.Red, 1);
+            _guilBatch.FillLine(indexPos, indexPos + Vector2.UnitY * 30, Color.Red, 1);
             _guilBatch.FillCircle(screenSize / 2, Color.Red, 4);
             //_guilBatch.PopClip();
 
