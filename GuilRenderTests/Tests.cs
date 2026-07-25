@@ -65,7 +65,7 @@ public class Tests : Game {
                 text,
                 screenSize / 2, mpos, 30,
                 screenSize.X / 2 + 300,
-                alignment: Alignment.Centered
+                alignment: Alignment.Centered2
             );
         }
 
@@ -74,7 +74,7 @@ public class Tests : Game {
     protected override void Draw(GameTime gameTime) {
         if (!IsActive) return;
 
-        int SCENE = 2;
+        int SCENE = 0;
         float time = (float)gameTime.TotalGameTime.TotalSeconds;
         var wave = float.Pow(float.Sin(time * 0.25f * float.Pi), 2);
         var mpos = Mouse.GetState().Position.ToVector2();
@@ -196,14 +196,14 @@ public class Tests : Game {
                 text,
                 screenSize / 2,
                 textP, textSize, wrapX,
-                alignment: Alignment.Centered
+                alignment: Alignment.Centered2
             );
 
             var clickPos = _guilFont.GetPositionAtWrapped(
                 text, screenSize / 2,
                 _lastClickIndex,
                 textSize, wrapX,
-                alignment: Alignment.Centered
+                alignment: Alignment.Centered2
             );
             _guilBatch.FillLine(clickPos, clickPos + Vector2.UnitY * 30, Color.Red, 1);
             _guilBatch.FillCircle(screenSize / 2, Color.Red, 4);

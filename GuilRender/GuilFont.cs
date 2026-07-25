@@ -12,15 +12,18 @@ namespace Guilred.Rendering;
 
 public sealed class GuilFont : IDisposable {
     private class AtlasData {
-        public Dictionary<char, (int x, int y, int w)> CharsData = [];
+        public Dictionary<char, (int texIndex, int x, int y, int w)> CharsData = [];
         public int Size;
     }
+
     private readonly List<AtlasData> _atlases = [];
-    public Texture2D MegaAtlas { get; private set; }
+    private readonly List<Texture2D> _textureAtlases = [];
+
+    public IReadOnlyList<Texture2D> Atlases => _textureAtlases;
     public float Spacing { get; set; } = 5;
     public float LineSpacing { get; set; } = 5;
 
-    public GuilFont(GraphicsDevice graphics, GuilBatch batch, string guifFilePath) {
+    public GuilFont(GraphicsDevice graphics, GuilBatch batch, string guifFilePath, GraphicsProfile profile = GraphicsProfile.Reach) {
         using var archive = ZipFile.OpenRead(guifFilePath);
 
         string? readEntryText(string entryName) {
@@ -76,33 +79,54 @@ public sealed class GuilFont : IDisposable {
         var currentX = padding;
         var currentY = padding;
         var currentRowHeight = 0;
-        var megaWidth = 2048;
 
-        List<(int stripH, char c, int x, int y, int w, Texture2D stripTex, int sx)> packedGlyphs = [];
+        var maxAtlasSize = profile == GraphicsProfile.Reach ? 2048 : 4096;
+        var currentAtlasIndex = 0;
+
+        List<(int stripH, char c, int x, int y, int w, Texture2D stripTex, int sx, int atlasIndex)> packedGlyphs = [];
 
         foreach (var g in glyphsToPack) {
-            if (currentX + g.w + padding > megaWidth) {
+            if (currentX + g.w + padding > maxAtlasSize) {
                 currentX = padding;
                 currentY += currentRowHeight + padding;
                 currentRowHeight = 0;
             }
 
-            packedGlyphs.Add((g.stripH, g.c, currentX, currentY, g.w, g.stripTex, g.sx));
+            // If we exceed the max height, jump to a new atlas
+            if (currentY + g.stripH + padding > maxAtlasSize) {
+                currentAtlasIndex++;
+                currentX = padding;
+                currentY = padding;
+                currentRowHeight = 0;
+            }
+
+            packedGlyphs.Add((g.stripH, g.c, currentX, currentY, g.w, g.stripTex, g.sx, currentAtlasIndex));
             currentX += g.w + padding;
             currentRowHeight = int.Max(currentRowHeight, g.stripH);
         }
 
-        var megaHeight = currentY + currentRowHeight + padding;
+        var totalAtlases = currentAtlasIndex + 1;
 
-        var renderTarget = new RenderTarget2D(graphics, megaWidth, megaHeight);
-        graphics.SetRenderTarget(renderTarget);
-        graphics.Clear(Color.Transparent);
-        batch.Begin(blendState: BlendState.NonPremultiplied);
-        foreach (var g in packedGlyphs)
-            batch.DrawTexture(g.stripTex, new Vector2(g.x, g.y), new Rectangle(g.sx, 0, g.w, g.stripH), Color.White, aaSize: 0);
-        batch.End();
+        for (int i = 0; i < totalAtlases; i++) {
+            // For the last atlas, we can shrink the height to save memory if we want, 
+            // but for simplicity and power-of-two consistency we'll use the max dimension, 
+            // or dynamically size just the last one.
+            int height = (i == totalAtlases - 1) ? currentY + currentRowHeight + padding : maxAtlasSize;
+            var renderTarget = new RenderTarget2D(graphics, maxAtlasSize, height);
+
+            graphics.SetRenderTarget(renderTarget);
+            graphics.Clear(Color.Transparent);
+            batch.Begin(blendState: BlendState.NonPremultiplied);
+
+            var glyphsOnThisAtlas = packedGlyphs.Where(g => g.atlasIndex == i);
+            foreach (var g in glyphsOnThisAtlas) {
+                batch.DrawTexture(g.stripTex, new Vector2(g.x, g.y), new Rectangle(g.sx, 0, g.w, g.stripH), Color.White, aaSize: 0);
+            }
+
+            batch.End();
+            _textureAtlases.Add(renderTarget);
+        }
         graphics.SetRenderTarget(null);
-        MegaAtlas = renderTarget;
 
         foreach (var tex in stripTextures) tex.Dispose();
 
@@ -110,11 +134,12 @@ public sealed class GuilFont : IDisposable {
         foreach (var group in grouped) {
             var atlasData = new AtlasData { Size = group.Key };
             foreach (var g in group) {
-                atlasData.CharsData[g.c] = (g.x, g.y, g.w);
+                atlasData.CharsData[g.c] = (g.atlasIndex, g.x, g.y, g.w);
             }
             _atlases.Add(atlasData);
         }
     }
+
     public float GetSpacing(float height) {
         return Spacing * height / 120f;
     }
@@ -174,6 +199,7 @@ public sealed class GuilFont : IDisposable {
         }
         return 0;
     }
+
     public Vector2 MeasureString(List<char> text, float height, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null) {
         return MeasureString(CollectionsMarshal.AsSpan(text), height, spacing, lineSpacing, index, length);
     }
@@ -211,6 +237,7 @@ public sealed class GuilFont : IDisposable {
         }
         return size;
     }
+
     public void DrawString(GuilBatch batch, string text, Vector2 position, Paint paint, float height, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, float rotation = 0, List<Paint>? perCharColor = null, Alignment alignment = default) {
         DrawString(batch, text.AsSpan(), position, paint, height, spacing, lineSpacing, index, length, rotation, perCharColor, alignment);
     }
@@ -259,7 +286,7 @@ public sealed class GuilFont : IDisposable {
                     var charPaint = paint;
                     if (perCharColor is not null) charPaint = perCharColor[globalIndex + i];
 
-                    batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
+                    batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                     currX += charWidth;
                 }
             }
@@ -270,6 +297,7 @@ public sealed class GuilFont : IDisposable {
             slice = slice[(nl + 1)..];
         }
     }
+
     private readonly List<int> _starts = new(256);
     private List<int> getVisualLineStarts(ReadOnlySpan<char> segment, float posX, float wrapX, in FontContext ctx) {
         _starts.Clear();
@@ -304,6 +332,7 @@ public sealed class GuilFont : IDisposable {
         }
         return _starts;
     }
+
     private static void measureWrappedSegment(ReadOnlySpan<char> segment, ref float currX, ref float currY, ref float maxX, Vector2 position, float height, float wrapX, in FontContext ctx) {
         for (var i = 0; i < segment.Length; i++) {
             var c = segment[i];
@@ -344,6 +373,7 @@ public sealed class GuilFont : IDisposable {
             maxX = float.Max(maxX, currX);
         }
     }
+
     public Vector2 MeasureStringWrapped(ReadOnlySpan<char> text, float height, float posX, float wrapX, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null) {
         if (text.Length == 0) return Vector2.Zero;
         var ctx = new FontContext(this, height, spacing, lineSpacing);
@@ -365,6 +395,7 @@ public sealed class GuilFont : IDisposable {
         }
         return new Vector2(maxX - posX, currY);
     }
+
     public Vector2 MeasureStringWrapped(List<List<char>> lines, float height, float posX, float wrapX, float? spacing = null, float? lineSpacing = null) {
         if (lines.Count == 0) return Vector2.Zero;
         var ctx = new FontContext(this, height, spacing, lineSpacing);
@@ -381,9 +412,11 @@ public sealed class GuilFont : IDisposable {
         }
         return new Vector2(maxX - posX, currY);
     }
+
     public void DrawStringWrapped(GuilBatch batch, string text, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, float rotation = 0, List<Paint>? perCharColor = null, Alignment alignment = default) {
         DrawStringWrapped(batch, text.AsSpan(), position, paint, height, wrapX, spacing, lineSpacing, index, length, rotation, perCharColor, alignment);
     }
+
     public void DrawStringWrapped(GuilBatch batch, ReadOnlySpan<char> text, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, float rotation = 0, List<Paint>? perCharColor = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (text.Length == 0 || wrapX == position.X) return;
@@ -443,7 +476,7 @@ public sealed class GuilFont : IDisposable {
                         var charPaint = paint;
                         if (perCharColor is not null) charPaint = perCharColor[globalIndex + start + i];
 
-                        batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
+                        batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                         currX += charWidth;
                     }
                 }
@@ -455,6 +488,7 @@ public sealed class GuilFont : IDisposable {
             slice = slice[(nl + 1)..];
         }
     }
+
     public void DrawStringWrapped(GuilBatch batch, List<List<char>> lines, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, float rotation = 0, List<List<Paint>>? perCharColor = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (wrapX == position.X) return;
@@ -508,7 +542,7 @@ public sealed class GuilFont : IDisposable {
 
                         var charPaint = perCharColor is null ? paint : perCharColor[j][start + i];
 
-                        batch.DrawTexture(MegaAtlas, drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
+                        batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, rotation, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                         currX += charWidth;
                     }
                 }
@@ -518,6 +552,7 @@ public sealed class GuilFont : IDisposable {
             }
         }
     }
+
     public void DrawStringOutlined(GuilBatch batch, string text, Vector2 position, Paint paint, Color outlineColor, float height, float outlineWidth, float step, float? spacing = null, float? lineSpacing = null, float rotation = 0, Alignment alignment = default) {
         for (float i = -1; i <= 1; i += step) {
             for (float j = -1; j <= 1; j += step) {
@@ -528,6 +563,7 @@ public sealed class GuilFont : IDisposable {
         }
         DrawString(batch, text, position, paint, height, spacing, lineSpacing, null, null, rotation, null, alignment);
     }
+
     public int GetIndexAt(ReadOnlySpan<char> line, float textX, float clickX, float height, float? spacing = null) {
         if (line.Length == 0) return 0;
         var ctx = new FontContext(this, height, spacing, null);
@@ -545,6 +581,7 @@ public sealed class GuilFont : IDisposable {
         }
         return line.Length;
     }
+
     public (int col, int ln) GetIndexAt(List<List<char>> lines, Vector2 position, Vector2 clickPos, float height, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
         if (lines.Count == 0) return (0, 0);
 
@@ -571,6 +608,7 @@ public sealed class GuilFont : IDisposable {
 
         return (GetIndexAt(CollectionsMarshal.AsSpan(line), lineX, clickPos.X, height, spacing), lineIndex);
     }
+
     public (int col, int ln) GetIndexAtWrapped(List<List<char>> lines, Vector2 position, Vector2 clickPos, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
         if (lines.Count == 0) return (0, 0);
         var ctx = new FontContext(this, height, spacing, lineSpacing);
@@ -617,6 +655,7 @@ public sealed class GuilFont : IDisposable {
         }
         return (lines[^1].Count, lines.Count - 1);
     }
+
     public (int col, int ln) GetIndexAtWrapped(ReadOnlySpan<char> text, Vector2 position, Vector2 clickPos, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (text.Length == 0 || wrapX == position.X) return default;
@@ -677,6 +716,7 @@ public sealed class GuilFont : IDisposable {
 
         return (lastLineLen, lastJ);
     }
+
     public Vector2 GetPositionAtWrapped(ReadOnlySpan<char> text, Vector2 position, (int col, int ln) index, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (text.Length == 0 || wrapX == position.X) return Vector2.Zero;
@@ -744,6 +784,7 @@ public sealed class GuilFont : IDisposable {
         currX += MeasureString(targetLineSpan, height, spacing, null, segStart, index.col - segStart).X;
         return new Vector2(currX + ctx.Spacing / 2, currY);
     }
+
     public Vector2 GetPositionAtWrapped(List<List<char>> lines, Vector2 position, (int col, int ln) index, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (lines.Count == 0 || wrapX == position.X) return Vector2.Zero;
@@ -794,6 +835,7 @@ public sealed class GuilFont : IDisposable {
         currX += MeasureString(span, height, spacing, null, segStart, index.col - segStart).X;
         return new Vector2(currX + (index.col > 0 ? ctx.Spacing / 2 : -ctx.Spacing / 2), currY);
     }
+
     public void IterateSelectionRects(List<List<char>> lines, GuilBatch batch, Vector2 position, float height, float wrapX, (int col, int ln) start, (int col, int ln) end, Action<GuilBatch, RectangleF>? onRect = null, float padding = 0, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (lines.Count == 0 || wrapX == position.X) return;
@@ -852,8 +894,10 @@ public sealed class GuilFont : IDisposable {
             }
         }
     }
+
     public void Dispose() {
-        MegaAtlas?.Dispose();
+        foreach (var tex in _textureAtlases) tex.Dispose();
+        _textureAtlases.Clear();
         _atlases.Clear();
     }
 }
