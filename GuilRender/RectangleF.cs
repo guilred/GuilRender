@@ -65,6 +65,8 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
 
     public static RectangleF FromWidth(float width) => new(0, 0, width, 0);
     public static RectangleF FromHeight(float height) => new(0, 0, 0, height);
+    public static RectangleF FromSize(Vector2 size) => new(0, 0, size.X, size.Y);
+    public static RectangleF FromSize(float width, float height) => new(0, 0, width, height);
     #endregion
 
     #region Basic Properties
@@ -281,6 +283,15 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
         Width = newWidth;
         Height = newHeight;
     }
+    public void Rotate(float rotation, Vector2 pivot) {
+        float cos = MathF.Cos(rotation);
+        float sin = MathF.Sin(rotation);
+        float dx = X - pivot.X;
+        float dy = Y - pivot.Y;
+
+        X = pivot.X + (dx * cos - dy * sin);
+        Y = pivot.Y + (dx * sin + dy * cos);
+    }
     #endregion
 
     #region Immutable Transformations (Returning a New Instance)
@@ -365,90 +376,22 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
     }
 
     public readonly RectangleF GetFitAndAligned(float aspectRatio, Anchor alignment = Anchor.Center) {
-        return FitAndAlign(this, aspectRatio, alignment);
+        var result = this;
+        result.FitAndAlign(aspectRatio, alignment);
+        return result;
     }
-    #endregion
-
-    #region Static Transformations
-    public static RectangleF Offset(RectangleF rectangle, Point amount) => Offset(rectangle, amount.X, amount.Y);
-
-    public static RectangleF Offset(RectangleF rectangle, Vector2 amount) => Offset(rectangle, amount.X, amount.Y);
-
-    public static RectangleF Offset(RectangleF rectangle, float xAmount, float yAmount) {
-        return new(rectangle.X + xAmount, rectangle.Y + yAmount, rectangle.Width, rectangle.Height);
-    }
-
-    public static RectangleF Inflate(RectangleF rectangle, float horizontalAmount, float verticalAmount) {
-        return new(rectangle.X - horizontalAmount, rectangle.Y - verticalAmount, rectangle.Width + horizontalAmount * 2, rectangle.Height + verticalAmount * 2);
-    }
-
-    public static RectangleF Scale(RectangleF rectangle, float scale) {
-        if (scale == 1f) return rectangle;
-        Vector2 center = rectangle.Center;
-        float newWidth = rectangle.Width * scale;
-        float newHeight = rectangle.Height * scale;
+    public readonly RectangleF GetRotated(float rotation, Vector2 pivot) {
+        float cos = MathF.Cos(rotation);
+        float sin = MathF.Sin(rotation);
+        float dx = X - pivot.X;
+        float dy = Y - pivot.Y;
 
         return new RectangleF(
-            center.X - newWidth / 2.0f,
-            center.Y - newHeight / 2.0f,
-            newWidth,
-            newHeight
+            pivot.X + (dx * cos - dy * sin),
+            pivot.Y + (dx * sin + dy * cos),
+            Width,
+            Height
         );
-    }
-
-    public static RectangleF Scale(RectangleF rectangle, Vector2 scale) {
-        Vector2 center = rectangle.Center;
-        float newWidth = rectangle.Width * scale.X;
-        float newHeight = rectangle.Height * scale.Y;
-        float newX = center.X - newWidth / 2.0f;
-        float newY = center.Y - newHeight / 2.0f;
-        return new RectangleF(newX, newY, newWidth, newHeight);
-    }
-
-    public static RectangleF Scale(RectangleF rectangle, float scale, Vector2 origin) {
-        if (scale == 1f) return rectangle;
-        return new RectangleF(
-            origin.X + (rectangle.X - origin.X) * scale,
-            origin.Y + (rectangle.Y - origin.Y) * scale,
-            rectangle.Width * scale,
-            rectangle.Height * scale
-        );
-    }
-
-    public static RectangleF Scale(RectangleF rectangle, Vector2 scale, Vector2 origin) {
-        return new RectangleF(
-            origin.X + (rectangle.X - origin.X) * scale.X,
-            origin.Y + (rectangle.Y - origin.Y) * scale.Y,
-            rectangle.Width * scale.X,
-            rectangle.Height * scale.Y
-        );
-    }
-
-    public static RectangleF FitAndCenter(RectangleF bounds, float aspectRatio) {
-        return FitAndAlign(bounds, aspectRatio, Anchor.Center);
-    }
-
-    public static RectangleF FitAndAlign(RectangleF bounds, float aspectRatio, Anchor alignment = Anchor.Center) {
-        bounds.FitAndAlign(aspectRatio, alignment);
-        return bounds;
-    }
-
-    public static RectangleF Union(RectangleF value1, RectangleF value2) {
-        float x = float.Min(value1.X, value2.X);
-        float y = float.Min(value1.Y, value2.Y);
-        return new RectangleF(
-            x, y,
-            float.Max(value1.X + value1.Width, value2.X + value2.Width) - x,
-            float.Max(value1.Y + value1.Height, value2.Y + value2.Height) - y
-        );
-    }
-
-    public static RectangleF Lerp(RectangleF A, RectangleF B, float t) {
-        float newX = A.X + (B.X - A.X) * t;
-        float newY = A.Y + (B.Y - A.Y) * t;
-        float newWidth = A.Width + (B.Width - A.Width) * t;
-        float newHeight = A.Height + (B.Height - A.Height) * t;
-        return new RectangleF(newX, newY, newWidth, newHeight);
     }
     #endregion
 
