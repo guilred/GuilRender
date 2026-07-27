@@ -283,7 +283,7 @@ public sealed class GuilFont : IDisposable {
                     var charPaint = paint;
                     if (perCharColor is not null) charPaint = perCharColor[globalIndex + i];
 
-                    batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, rotation.Angle, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
+                    batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, (rotation.Angle, drawPos), ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                     currX += charWidth;
                 }
             }
@@ -474,7 +474,7 @@ public sealed class GuilFont : IDisposable {
                         var charPaint = paint;
                         if (perCharColor is not null) charPaint = perCharColor[globalIndex + start + i];
 
-                        batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, rotation.Angle, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
+                        batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, (rotation.Angle, Vector2.Zero), ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                         currX += charWidth;
                     }
                 }
@@ -542,7 +542,7 @@ public sealed class GuilFont : IDisposable {
 
                         var charPaint = perCharColor is null ? paint : perCharColor[j][start + i];
 
-                        batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, rotation.Angle, Vector2.Zero, ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
+                        batch.DrawTexture(Atlases[offset.texIndex], drawPos, sourceRect, charPaint, (rotation.Angle, Vector2.Zero), ctx.AtlasScale, SpriteEffects.None, aaSize: 0);
                         currX += charWidth;
                     }
                 }
@@ -869,7 +869,7 @@ public sealed class GuilFont : IDisposable {
         return resultPos;
     }
 
-    public void IterateSelectionRects(List<List<char>> lines, GuilBatch batch, Vector2 position, float height, float wrapX, (int col, int ln) start, (int col, int ln) end, Action<GuilBatch, RectangleF>? onRect = null, float padding = 0, float? spacing = null, float? lineSpacing = null, TextRotation rotation = default, Alignment alignment = default) {
+    public void IterateSelectionRects(List<List<char>> lines, GuilBatch batch, Vector2 position, float height, float wrapX, (int col, int ln) start, (int col, int ln) end, Action<GuilBatch, RectangleF>? onRect = null, float padding = 0, float? spacing = null, float? lineSpacing = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (lines.Count == 0 || wrapX == position.X) return;
         var ctx = new FontContext(this, height, spacing, lineSpacing, batch);

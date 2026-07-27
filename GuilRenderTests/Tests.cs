@@ -75,7 +75,7 @@ public class Tests : Game {
     protected override void Draw(GameTime gameTime) {
         if (!IsActive) return;
 
-        int SCENE = 0;
+        int SCENE = 2;
         float time = (float)gameTime.TotalGameTime.TotalSeconds;
         var wave = float.Pow(float.Sin(time * 0.25f * float.Pi), 2);
         var mpos = Mouse.GetState().Position.ToVector2();
@@ -178,7 +178,7 @@ public class Tests : Game {
             }
 
             var fade = float.Clamp((wave - 0.25f) / 0.75f, 0, 1);
-            _guilBatch.BorderRectangle(clipRect.Position, clipRect.Size, Color.Black * fade, 2, 50, clipRot, clipRect.Size / 2);
+            _guilBatch.BorderRectangle(clipRect.Position, clipRect.Size, Color.Black * fade, 2, 50, clipRot);
 
             var vig = Paint.RadialPixel(screenSize / 2, Vector2.UnitY * 900, Color.Transparent, Color.Black).SetEasing(Paint.EasingType.EaseIn, 3);
             _guilBatch.FillRectangle(Vector2.Zero, screenSize, vig);
@@ -230,18 +230,19 @@ public class Tests : Game {
             _guilBatch.DrawLine(pos, pos + size, ps, ps2, 50, 10);
             //_guilBatch.DrawArc(pos + size / 2, ps, ps2, size.X / 2 - 80, 80, float.Pi * 2 * 0.02f, float.Pi * 2 * 0.98f, 10);
             //_guilBatch.DrawCircle(pos + size / 2, ps, ps2, size.X / 2, 5);*/
-            _guilBatch.DrawTexture(_gr, pos, size, null, Color.White, rounding: 40);
-
-            _guilBatch.End();
-            BlendState invertBlend = new() {
-                ColorBlendFunction = BlendFunction.Add,
-                ColorSourceBlend = Blend.InverseDestinationColor,
-                ColorDestinationBlend = Blend.Zero,
-            };
-            _guilBatch.Begin(blendState: invertBlend);
+            //_guilBatch.DrawTexture(_gr, pos, size, null, Color.White, rounding: 40);
+            //
+            //_guilBatch.End();
+            //BlendState invertBlend = new() {
+            //    ColorBlendFunction = BlendFunction.Add,
+            //    ColorSourceBlend = Blend.InverseDestinationColor,
+            //    ColorDestinationBlend = Blend.Zero,
+            //};
+            //_guilBatch.Begin(blendState: invertBlend);
 
             pos = new Vector2(100, 100);
-            _guilBatch.FillRectangle(pos, size, Color.White, rounding: 40);
+            _guilBatch.FillRectangle(pos, size, Color.Black, 40, (float.Pi / 2 * wave, pos));
+            _guilBatch.FillRectangle(pos, size, Color.Yellow, 40);
 
             _guilBatch.End();
         }
@@ -277,7 +278,7 @@ public class Tests : Game {
 
         var ps = Paint.Linear(Vector2.Zero, size, Color.Blue, Color.Magenta) * m1;
         var ps2 = Paint.Linear(Vector2.Zero, size, Color.Magenta, Color.Blue) * m2;
-        _guilBatch.DrawRectangle(pos, size, ps, ps2, 20, 40, 0.05f, size / 2);
+        _guilBatch.DrawRectangle(pos, size, ps, ps2, 20, 40, 0.05f);
         step();
 
         ps = Paint.Linear(Vector2.Zero, Vector2.One * size.X, Color.Blue, Color.Magenta) * m1;

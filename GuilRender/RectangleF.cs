@@ -286,11 +286,14 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
     public void Rotate(float rotation, Vector2 pivot) {
         float cos = MathF.Cos(rotation);
         float sin = MathF.Sin(rotation);
-        float dx = X - pivot.X;
-        float dy = Y - pivot.Y;
-
-        X = pivot.X + (dx * cos - dy * sin);
-        Y = pivot.Y + (dx * sin + dy * cos);
+        float dx = Center.X - pivot.X;
+        float dy = Center.Y - pivot.Y;
+        var newCenter = new Vector2(
+            pivot.X + (dx * cos - dy * sin),
+            pivot.Y + (dx * sin + dy * cos)
+        );
+        X = newCenter.X - Width / 2f;
+        Y = newCenter.Y - Height / 2f;
     }
     #endregion
 
@@ -383,14 +386,16 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
     public readonly RectangleF GetRotated(float rotation, Vector2 pivot) {
         float cos = MathF.Cos(rotation);
         float sin = MathF.Sin(rotation);
-        float dx = X - pivot.X;
-        float dy = Y - pivot.Y;
-
-        return new RectangleF(
+        float dx = Center.X - pivot.X;
+        float dy = Center.Y - pivot.Y;
+        var newCenter = new Vector2(
             pivot.X + (dx * cos - dy * sin),
-            pivot.Y + (dx * sin + dy * cos),
-            Width,
-            Height
+            pivot.Y + (dx * sin + dy * cos)
+        );
+        return new RectangleF(
+            newCenter.X - Width / 2f,
+            newCenter.Y - Height / 2f,
+            Width, Height
         );
     }
     #endregion
