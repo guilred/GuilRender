@@ -234,10 +234,10 @@ public sealed class GuilFont : IDisposable {
         return size;
     }
 
-    public void DrawString(GuilBatch batch, string text, Vector2 position, Paint paint, float height, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, TextRotation rotation = default, List<Paint>? perCharColor = null, Alignment alignment = default) {
+    public void DrawString(GuilBatch batch, string text, Vector2 position, Paint paint, float height, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, Rotation rotation = default, List<Paint>? perCharColor = null, Alignment alignment = default) {
         DrawString(batch, text.AsSpan(), position, paint, height, spacing, lineSpacing, index, length, rotation, perCharColor, alignment);
     }
-    public void DrawString(GuilBatch batch, ReadOnlySpan<char> text, Vector2 position, Paint paint, float height, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, TextRotation rotation = default, List<Paint>? perCharColor = null, Alignment alignment = default) {
+    public void DrawString(GuilBatch batch, ReadOnlySpan<char> text, Vector2 position, Paint paint, float height, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, Rotation rotation = default, List<Paint>? perCharColor = null, Alignment alignment = default) {
         if (text.Length == 0) return;
         var ctx = new FontContext(this, height, spacing, lineSpacing, batch);
         var slice = text.Slice(index ?? 0, length ?? text.Length);
@@ -410,11 +410,11 @@ public sealed class GuilFont : IDisposable {
         return new Vector2(maxX - posX, currY);
     }
 
-    public void DrawStringWrapped(GuilBatch batch, string text, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, TextRotation rotation = default, List<Paint>? perCharColor = null, Alignment alignment = default) {
+    public void DrawStringWrapped(GuilBatch batch, string text, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, Rotation rotation = default, List<Paint>? perCharColor = null, Alignment alignment = default) {
         DrawStringWrapped(batch, text.AsSpan(), position, paint, height, wrapX, spacing, lineSpacing, index, length, rotation, perCharColor, alignment);
     }
 
-    public void DrawStringWrapped(GuilBatch batch, ReadOnlySpan<char> text, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, TextRotation rotation = default, List<Paint>? perCharColor = null, Alignment alignment = default) {
+    public void DrawStringWrapped(GuilBatch batch, ReadOnlySpan<char> text, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, int? index = null, int? length = null, Rotation rotation = default, List<Paint>? perCharColor = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (text.Length == 0 || wrapX == position.X) return;
 
@@ -487,7 +487,7 @@ public sealed class GuilFont : IDisposable {
         }
     }
 
-    public void DrawStringWrapped(GuilBatch batch, List<List<char>> lines, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, TextRotation rotation = default, List<List<Paint>>? perCharColor = null, Alignment alignment = default) {
+    public void DrawStringWrapped(GuilBatch batch, List<List<char>> lines, Vector2 position, Paint paint, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Rotation rotation = default, List<List<Paint>>? perCharColor = null, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (wrapX == position.X) return;
 
@@ -553,7 +553,7 @@ public sealed class GuilFont : IDisposable {
         }
     }
 
-    public void DrawStringOutlined(GuilBatch batch, string text, Vector2 position, Paint paint, Color outlineColor, float height, float outlineWidth, float step, float? spacing = null, float? lineSpacing = null, TextRotation rotation = default, Alignment alignment = default) {
+    public void DrawStringOutlined(GuilBatch batch, string text, Vector2 position, Paint paint, Color outlineColor, float height, float outlineWidth, float step, float? spacing = null, float? lineSpacing = null, Rotation rotation = default, Alignment alignment = default) {
         var explicitRotation = rotation;
 
         if (rotation.Pivot == null) {
@@ -565,7 +565,7 @@ public sealed class GuilFont : IDisposable {
             if (alignment.xAlignment == XAlignment.Center) topX -= totalSize.X / 2;
             else if (alignment.xAlignment == XAlignment.Right) topX -= totalSize.X;
 
-            explicitRotation = new TextRotation(rotation.Angle, new Vector2(topX + totalSize.X / 2f, topY + totalSize.Y / 2f));
+            explicitRotation = new Rotation(rotation.Angle, new Vector2(topX + totalSize.X / 2f, topY + totalSize.Y / 2f));
         }
 
         for (float i = -1; i <= 1; i += step) {
@@ -596,7 +596,7 @@ public sealed class GuilFont : IDisposable {
         return line.Length;
     }
 
-    public (int col, int ln) GetIndexAt(List<List<char>> lines, Vector2 position, Vector2 clickPos, float height, float? spacing = null, float? lineSpacing = null, TextRotation rotation = default, Alignment alignment = default) {
+    public (int col, int ln) GetIndexAt(List<List<char>> lines, Vector2 position, Vector2 clickPos, float height, float? spacing = null, float? lineSpacing = null, Rotation rotation = default, Alignment alignment = default) {
         if (lines.Count == 0) return (0, 0);
 
         var ls = lineSpacing ?? LineSpacing;
@@ -626,7 +626,7 @@ public sealed class GuilFont : IDisposable {
         return (GetIndexAt(CollectionsMarshal.AsSpan(line), lineX, clickPos.X, height, spacing), lineIndex);
     }
 
-    public (int col, int ln) GetIndexAtWrapped(List<List<char>> lines, Vector2 position, Vector2 clickPos, float height, float wrapX, float? spacing = null, float? lineSpacing = null, TextRotation rotation = default, Alignment alignment = default) {
+    public (int col, int ln) GetIndexAtWrapped(List<List<char>> lines, Vector2 position, Vector2 clickPos, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Rotation rotation = default, Alignment alignment = default) {
         if (lines.Count == 0) return (0, 0);
         var ctx = new FontContext(this, height, spacing, lineSpacing);
 
@@ -676,7 +676,7 @@ public sealed class GuilFont : IDisposable {
         return (lines[^1].Count, lines.Count - 1);
     }
 
-    public (int col, int ln) GetIndexAtWrapped(ReadOnlySpan<char> text, Vector2 position, Vector2 clickPos, float height, float wrapX, float? spacing = null, float? lineSpacing = null, TextRotation rotation = default, Alignment alignment = default) {
+    public (int col, int ln) GetIndexAtWrapped(ReadOnlySpan<char> text, Vector2 position, Vector2 clickPos, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Rotation rotation = default, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (text.Length == 0 || wrapX == position.X) return default;
 
@@ -740,7 +740,7 @@ public sealed class GuilFont : IDisposable {
         return (lastLineLen, lastJ);
     }
 
-    public Vector2 GetPositionAtWrapped(ReadOnlySpan<char> text, Vector2 position, (int col, int ln) index, float height, float wrapX, float? spacing = null, float? lineSpacing = null, TextRotation rotation = default, Alignment alignment = default) {
+    public Vector2 GetPositionAtWrapped(ReadOnlySpan<char> text, Vector2 position, (int col, int ln) index, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Rotation rotation = default, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (text.Length == 0 || wrapX == position.X) return Vector2.Zero;
 
@@ -813,7 +813,7 @@ public sealed class GuilFont : IDisposable {
         return resultPos;
     }
 
-    public Vector2 GetPositionAtWrapped(List<List<char>> lines, Vector2 position, (int col, int ln) index, float height, float wrapX, float? spacing = null, float? lineSpacing = null, TextRotation rotation = default, Alignment alignment = default) {
+    public Vector2 GetPositionAtWrapped(List<List<char>> lines, Vector2 position, (int col, int ln) index, float height, float wrapX, float? spacing = null, float? lineSpacing = null, Rotation rotation = default, Alignment alignment = default) {
         wrapX = float.Max(position.X, wrapX);
         if (lines.Count == 0 || wrapX == position.X) return Vector2.Zero;
 
