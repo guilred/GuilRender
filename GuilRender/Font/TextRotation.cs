@@ -7,4 +7,5 @@ public struct TextRotation(float angle, Vector2? pivot = null) {
     public Vector2? Pivot = pivot;
     public static implicit operator TextRotation(float angle) => new(angle);
     public static implicit operator TextRotation((float angle, Vector2? pivot) t) => new(t.angle, t.pivot);
+    public static implicit operator TextRotation(Rotation rotation) => new(rotation.Angle, rotation.Pivot);
 }
