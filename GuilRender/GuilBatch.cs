@@ -542,8 +542,13 @@ public class GuilBatch {
         }
     }
 
-    public void DrawArc(Vector2 center, Paint fillPaint, Paint borderPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
+    public void DrawArc(Vector2 center, Paint fillPaint, Paint borderPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
+        if (rotation.Exists && rotation.Pivot is Vector2 pivot) {
+            center.RotateAround(pivot, rotation.Angle);
+            startAngle += rotation.Angle;
+            endAngle += rotation.Angle;
+        }
         static float normalizeAngle(float angle) => ((angle % float.Tau) + float.Tau) % float.Tau;
 
         startAngle = normalizeAngle(startAngle);
@@ -626,11 +631,11 @@ public class GuilBatch {
         }
     }
 
-    public void FillArc(Vector2 center, Paint fillPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => DrawArc(center, fillPaint, default, innerRadius, outerRadius, startAngle, endAngle, 0f, quality, aaSize);
+    public void FillArc(Vector2 center, Paint fillPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawArc(center, fillPaint, default, innerRadius, outerRadius, startAngle, endAngle, 0f, rotation, quality, aaSize);
 
-    public void BorderArc(Vector2 center, Paint borderPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
-        => DrawArc(center, default, borderPaint, innerRadius, outerRadius, startAngle, endAngle, borderThickness, quality, aaSize);
+    public void BorderArc(Vector2 center, Paint borderPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawArc(center, default, borderPaint, innerRadius, outerRadius, startAngle, endAngle, borderThickness, rotation, quality, aaSize);
 
     public void DrawCircle(Vector2 center, Paint fillPaint, Paint borderPaint, float radius, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
