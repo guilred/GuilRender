@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
+using FontStashSharp;
 using Guilred.Shapes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -13,7 +13,7 @@ public class GuilBatch {
     private const int MaxVertices = 8192;
     private const int MaxIndices = MaxVertices * 3;
 
-    private readonly GraphicsDevice _device;
+    public readonly GraphicsDevice Graphics;
 
     private readonly Effect _effect;
     private readonly EffectPass _pass;
@@ -28,7 +28,7 @@ public class GuilBatch {
 
     private readonly DynamicVertexBuffer _vertexBuffer;
     private readonly DynamicIndexBuffer _indexBuffer;
-
+    
     private readonly PrimitiveVertex[] _vertices = new PrimitiveVertex[MaxVertices];
     private readonly short[] _indices = new short[MaxIndices];
     private int _vertexCount;
@@ -37,12 +37,14 @@ public class GuilBatch {
     private bool _begun;
     public float CameraZoom { get; private set; }
 
+    public readonly GuilFontStashRenderer FontRenderer;
+
     // debugging
     //private double d_time;
     //private bool d_blink => double.Sin(d_time * 0.5f) > 0;
 
     public GuilBatch(GraphicsDevice device, ContentManager? content = null, Effect? effect = null) {
-        _device = device;
+        Graphics = device;
 
         if (content is not null)
             _effect = content.Load<Effect>("guilbatch-effect");
@@ -54,7 +56,7 @@ public class GuilBatch {
             using Stream? stream = assembly.GetManifestResourceStream(resourceName) ?? throw new Exception("Could not find the embedded shader resource :(");
             byte[] bytecode = new byte[stream.Length];
             stream.ReadExactly(bytecode, 0, (int)stream.Length);
-            _effect = new Effect(_device, bytecode);
+            _effect = new Effect(Graphics, bytecode);
         }
 
         _pass = _effect.Techniques[0].Passes[0];
@@ -63,6 +65,8 @@ public class GuilBatch {
 
         _vertexBuffer = new DynamicVertexBuffer(device, PrimitiveVertex.VertexDeclaration, MaxVertices, BufferUsage.WriteOnly);
         _indexBuffer = new DynamicIndexBuffer(device, IndexElementSize.SixteenBits, MaxIndices, BufferUsage.WriteOnly);
+
+        FontRenderer = new(this);
     }
 
     public void Begin(Matrix? view = null, Matrix? projection = null, BlendState? blendState = null, SamplerState? samplerState = null, float? clipSmoothing = null) {
@@ -122,20 +126,20 @@ public class GuilBatch {
         _vertexBuffer.SetData(_vertices, 0, _vertexCount, SetDataOptions.Discard);
         _indexBuffer.SetData(_indices, 0, _indexCount, SetDataOptions.Discard);
 
-        _device.SetVertexBuffer(_vertexBuffer);
-        _device.Indices = _indexBuffer;
+        Graphics.SetVertexBuffer(_vertexBuffer);
+        Graphics.Indices = _indexBuffer;
 
-        (var previousBlendState, _device.BlendState) = (_device.BlendState, _currentBlendState);
-        (var previousRasterizerState, _device.RasterizerState) = (_device.RasterizerState, RasterizerState.CullNone);
+        (var previousBlendState, Graphics.BlendState) = (Graphics.BlendState, _currentBlendState);
+        (var previousRasterizerState, Graphics.RasterizerState) = (Graphics.RasterizerState, RasterizerState.CullNone);
 
         _pass.Apply();
         for (int i = 0; i < _textureCount; i++) {
-            _device.Textures[i] = _textures[i];
-            _prevSamplerStatesBuffer[i] = _device.SamplerStates[i];
-            _device.SamplerStates[i] = _currentSamplerState;
+            Graphics.Textures[i] = _textures[i];
+            _prevSamplerStatesBuffer[i] = Graphics.SamplerStates[i];
+            Graphics.SamplerStates[i] = _currentSamplerState;
         }
 
-        _device.DrawIndexedPrimitives(
+        Graphics.DrawIndexedPrimitives(
             primitiveType: PrimitiveType.TriangleList,
             baseVertex: 0,
             startIndex: 0,
@@ -144,10 +148,10 @@ public class GuilBatch {
 
         for (int i = 0; i < _textureCount; i++) {
             _textures[i] = null;
-            _device.SamplerStates[i] = _prevSamplerStatesBuffer[i];
+            Graphics.SamplerStates[i] = _prevSamplerStatesBuffer[i];
         }
-        _device.BlendState = previousBlendState;
-        _device.RasterizerState = previousRasterizerState;
+        Graphics.BlendState = previousBlendState;
+        Graphics.RasterizerState = previousRasterizerState;
 
         _vertexCount = 0;
         _indexCount = 0;
@@ -157,7 +161,7 @@ public class GuilBatch {
     private void updateProjection(Matrix? view, Matrix? projection) {
         var currentView = view ?? Matrix.Identity;
         CameraZoom = new Vector3(currentView.M11, currentView.M12, currentView.M13).Length();
-        Matrix finalProj = currentView * (projection ?? Matrix.CreateOrthographicOffCenter(0, _device.Viewport.Width, _device.Viewport.Height, 0, 0f, 1f));
+        Matrix finalProj = currentView * (projection ?? Matrix.CreateOrthographicOffCenter(0, Graphics.Viewport.Width, Graphics.Viewport.Height, 0, 0f, 1f));
         _projectionParam.SetValue(finalProj);
     }
 
@@ -1145,58 +1149,63 @@ public class GuilBatch {
 
         DrawTexture(texture, destinationRectangle.Position, destinationRectangle.Size, sourceRectangle, paint, rotation, rounding, effects, cornerQuality, aaSize);
     }
+    public void DrawQuad(PrimitiveVertex v0, PrimitiveVertex v1, PrimitiveVertex v2, PrimitiveVertex v3) {
+        ensureBegun();
+        ensureCapacity(4, 6);
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct PrimitiveVertex : IVertexType {
-        public Vector3 Position;
-        public Vector4 ClipRect;
-        public Vector2 ClipParams;
-        public Color ColorA;
-        public Color ColorB;
-        public Vector4 TexCoords;
-        public Vector4 GradientCoords;
-        public Vector3 PaintParams;
+        int startIdx = _vertexCount;
 
-        public static readonly VertexDeclaration VertexDeclaration = new(
-            new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
-            new VertexElement(12, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 0),
-            new VertexElement(28, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 1),
-            new VertexElement(36, VertexElementFormat.Color, VertexElementUsage.Color, 0),
-            new VertexElement(40, VertexElementFormat.Color, VertexElementUsage.Color, 1),
-            new VertexElement(44, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 2),
-            new VertexElement(60, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 3),
-            new VertexElement(76, VertexElementFormat.Vector3, VertexElementUsage.TextureCoordinate, 4)
-        );
+        v0.ClipRect = _currentClip.Rect; v0.ClipParams = _currentClip.Params;
+        v1.ClipRect = _currentClip.Rect; v1.ClipParams = _currentClip.Params;
+        v2.ClipRect = _currentClip.Rect; v2.ClipParams = _currentClip.Params;
+        v3.ClipRect = _currentClip.Rect; v3.ClipParams = _currentClip.Params;
 
-        public PrimitiveVertex(in Vector3 pos, in Paint paint, in Vector4 clipRect, in Vector2 clipParams) {
-            Position = pos;
-            ClipRect = clipRect;
-            ClipParams = clipParams;
-            ColorA = paint.ColorA;
-            ColorB = paint.ColorB;
-            TexCoords = -Vector4.UnitZ;
-            GradientCoords = new Vector4(paint.Start.X, paint.Start.Y, paint.End.X, paint.End.Y);
-            float safePower = float.Clamp(paint.EasingPower, 0f, 99.9f);
-            float packedData = ((float)paint.Type * 1000f) + ((float)paint.Easing * 100f) + safePower;
-            PaintParams = new Vector3(paint.OffsetA, paint.OffsetB, packedData);
-        }
+        _vertices[_vertexCount++] = v0;
+        _vertices[_vertexCount++] = v1;
+        _vertices[_vertexCount++] = v2;
+        _vertices[_vertexCount++] = v3;
 
-        public PrimitiveVertex(in Vector3 pos, in Vector2 texCoords, int index, in Paint paint, in Vector4 clipRect, in Vector2 clipParams) {
-            Position = pos;
-            ClipRect = clipRect;
-            ClipParams = clipParams;
-            ColorA = paint.ColorA;
-            ColorB = paint.ColorB;
-            TexCoords = new Vector4(texCoords.X, texCoords.Y, index, 0);
-            GradientCoords = new Vector4(paint.Start.X, paint.Start.Y, paint.End.X, paint.End.Y);
-            float safePower = float.Clamp(paint.EasingPower, 0f, 99.9f);
-            float packedData = ((float)paint.Type * 1000f) + ((float)paint.Easing * 100f) + safePower;
-            PaintParams = new Vector3(paint.OffsetA, paint.OffsetB, packedData);
-        }
+        _indices[_indexCount++] = (short)(startIdx + 0);
+        _indices[_indexCount++] = (short)(startIdx + 1);
+        _indices[_indexCount++] = (short)(startIdx + 2);
 
-        readonly VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;
+        _indices[_indexCount++] = (short)(startIdx + 0);
+        _indices[_indexCount++] = (short)(startIdx + 2);
+        _indices[_indexCount++] = (short)(startIdx + 3);
     }
 
+    public void DrawQuad(Texture2D texture, PrimitiveVertex v0, PrimitiveVertex v1, PrimitiveVertex v2, PrimitiveVertex v3) {
+        ensureBegun();
+        int texIndex = getTextureIndex(texture);
+        ensureCapacity(4, 6);
+
+        int startIdx = _vertexCount;
+
+        v0.ClipRect = _currentClip.Rect; v0.ClipParams = _currentClip.Params;
+        v0.TexCoords.Z = texIndex;
+
+        v1.ClipRect = _currentClip.Rect; v1.ClipParams = _currentClip.Params;
+        v1.TexCoords.Z = texIndex;
+
+        v2.ClipRect = _currentClip.Rect; v2.ClipParams = _currentClip.Params;
+        v2.TexCoords.Z = texIndex;
+
+        v3.ClipRect = _currentClip.Rect; v3.ClipParams = _currentClip.Params;
+        v3.TexCoords.Z = texIndex;
+
+        _vertices[_vertexCount++] = v0;
+        _vertices[_vertexCount++] = v1;
+        _vertices[_vertexCount++] = v2;
+        _vertices[_vertexCount++] = v3;
+
+        _indices[_indexCount++] = (short)(startIdx + 0);
+        _indices[_indexCount++] = (short)(startIdx + 1);
+        _indices[_indexCount++] = (short)(startIdx + 2);
+
+        _indices[_indexCount++] = (short)(startIdx + 0);
+        _indices[_indexCount++] = (short)(startIdx + 2);
+        _indices[_indexCount++] = (short)(startIdx + 3);
+    }
     private static float qualityToError(ArcQuality quality) => quality switch {
         ArcQuality.Low => 1.0f,
         ArcQuality.Normal => 0.125f,

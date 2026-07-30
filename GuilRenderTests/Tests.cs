@@ -1,4 +1,5 @@
 ﻿#nullable disable
+using FontStashSharp;
 using Guilred.Input;
 using Guilred.Rendering;
 using Guilred.Shapes;
@@ -6,6 +7,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace GuilRenderTests;
@@ -21,6 +23,7 @@ public class Tests : Game {
     private Texture2D _pixel;
     private RenderTarget2D _mid;
     public InputManager input;
+    private FontSystem _fontSystem;
     public Tests() {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
@@ -47,6 +50,13 @@ public class Tests : Game {
         _pixel = new Texture2D(GraphicsDevice, 1, 1);
         _pixel.SetData([Color.White]);
         _mid = new RenderTarget2D(GraphicsDevice, 1600, 900);
+
+        var settings = new FontSystemSettings {
+            TextShaper = new HarfBuzzTextShaper()
+        };
+
+        _fontSystem = new FontSystem(settings);
+        _fontSystem.AddFont(File.ReadAllBytes(@"Content/Marhey.ttf"));
     }
     private static Alignment _alignment => Alignment.Centered;
     private bool _zoomed;
@@ -240,16 +250,21 @@ public class Tests : Game {
             //};
             //_guilBatch.Begin(blendState: invertBlend);
 
-            pos = new Vector2(100, 100);
-            _guilBatch.FillRectangle(pos, size, Color.Black, 40, (float.Pi / 2 * wave, pos));
-            _guilBatch.FillRectangle(pos, size, Color.Yellow, 40);
+            //_guilBatch.FillRectangle(pos, size, Color.Black, 40, (float.Pi / 2 * wave, pos));
+            //_guilBatch.FillRectangle(pos, size, Color.Yellow, 40);
+            pos = new Vector2(600, 300);
+            var text = "ولما كان تناسي حقوق الإنسان وازدراؤها قد أفضيا إلى أعمال همجية";
+            var font = _fontSystem.GetFont(60);
+            var textSize = font.MeasureString(text);
+            _guilBatch.FillRectangle(pos, textSize, Color.Red);
+            font.DrawText(_guilBatch.FontRenderer, text, pos, Color.Green, origin: textSize / 2 * Vector2.UnitX);
 
             _guilBatch.End();
         }
 
         GraphicsDevice.SetRenderTarget(null);
 
-        var zoomPos = Vector2.One * 80 + Vector2.One * 300 - Vector2.UnitX * 0;
+        var zoomPos = mpos;
         var zoomMat = _zoomed ? Matrix.CreateTranslation(-zoomPos.X, -zoomPos.Y, 0) * Matrix.CreateScale(4) * Matrix.CreateTranslation(zoomPos.X, zoomPos.Y, 0) : Matrix.Identity;
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: zoomMat);
         _spriteBatch.Draw(_mid, _mid.Bounds, Color.White);
