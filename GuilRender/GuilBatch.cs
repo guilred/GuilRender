@@ -91,6 +91,7 @@ public class GuilBatch {
 
     public void SetBlendState(BlendState blendState) {
         ensureBegun();
+        if (_currentBlendState == blendState) return;
         flush();
         _currentBlendState = blendState;
     }
