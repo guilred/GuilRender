@@ -29,7 +29,7 @@ public class GuilBatch {
     private readonly DynamicVertexBuffer _vertexBuffer;
     private readonly DynamicIndexBuffer _indexBuffer;
     
-    private readonly PrimitiveVertex[] _vertices = new PrimitiveVertex[MaxVertices];
+    private readonly GuilVertex[] _vertices = new GuilVertex[MaxVertices];
     private readonly short[] _indices = new short[MaxIndices];
     private int _vertexCount;
     private int _indexCount;
@@ -63,7 +63,7 @@ public class GuilBatch {
         _projectionParam = _effect.Parameters["Projection"];
         _clipSmoothingParam = _effect.Parameters["clipSmoothing"];
 
-        _vertexBuffer = new DynamicVertexBuffer(device, PrimitiveVertex.VertexDeclaration, MaxVertices, BufferUsage.WriteOnly);
+        _vertexBuffer = new DynamicVertexBuffer(device, GuilVertex.VertexDeclaration, MaxVertices, BufferUsage.WriteOnly);
         _indexBuffer = new DynamicIndexBuffer(device, IndexElementSize.SixteenBits, MaxIndices, BufferUsage.WriteOnly);
 
         FontRenderer = new(this);
@@ -241,14 +241,14 @@ public class GuilBatch {
             ensureCapacity(segments + 2, segments * 3);
             int startIdx = _vertexCount;
 
-            _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(center, 0), paint, _currentClip.Rect, _currentClip.Params);
+            _vertices[_vertexCount++] = new GuilVertex(new Vector3(center, 0), paint, _currentClip.Rect, _currentClip.Params);
 
             for (int i = 0; i <= segments; i++) {
                 float angle = float.Lerp(startAngle, endAngle, (float)i / segments);
                 (float sin, float cos) = float.SinCos(angle);
                 Vector2 pos = center + new Vector2(cos, sin) * outerRadius;
 
-                _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(pos, 0), paint, _currentClip.Rect, _currentClip.Params);
+                _vertices[_vertexCount++] = new GuilVertex(new Vector3(pos, 0), paint, _currentClip.Rect, _currentClip.Params);
 
                 if (i > 0) {
                     _indices[_indexCount++] = (short)startIdx;
@@ -266,8 +266,8 @@ public class GuilBatch {
                 (float sin, float cos) = float.SinCos(angle);
                 Vector2 dir = new(cos, sin);
 
-                _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(center + dir * innerRadius, 0), paint, _currentClip.Rect, _currentClip.Params);
-                _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(center + dir * outerRadius, 0), paint, _currentClip.Rect, _currentClip.Params);
+                _vertices[_vertexCount++] = new GuilVertex(new Vector3(center + dir * innerRadius, 0), paint, _currentClip.Rect, _currentClip.Params);
+                _vertices[_vertexCount++] = new GuilVertex(new Vector3(center + dir * outerRadius, 0), paint, _currentClip.Rect, _currentClip.Params);
 
                 if (i > 0) {
                     int v0 = startIdx + (i - 1) * 2;
@@ -319,9 +319,9 @@ public class GuilBatch {
                     worldFringe = outer ? basePos + aaDir : basePos - aaDir;
                 }
 
-                _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(worldBase, 0), paint, _currentClip.Rect, _currentClip.Params);
+                _vertices[_vertexCount++] = new GuilVertex(new Vector3(worldBase, 0), paint, _currentClip.Rect, _currentClip.Params);
 
-                _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(worldFringe, 0), paint, _currentClip.Rect, _currentClip.Params) {
+                _vertices[_vertexCount++] = new GuilVertex(new Vector3(worldFringe, 0), paint, _currentClip.Rect, _currentClip.Params) {
                     ColorA = Color.Transparent,
                     ColorB = Color.Transparent
                 };
@@ -400,7 +400,7 @@ public class GuilBatch {
                 pivot.Y + dx * rotSin + dy * rotCos);
         }
 
-        PrimitiveVertex Vert(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params);
+        GuilVertex Vert(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params);
 
         if (hasFill) {
             ensureCapacity(perimVerts + 1, perimVerts * 3);
@@ -523,9 +523,9 @@ public class GuilBatch {
             (float sin, float cos) = float.SinCos(angle);
             Vector2 dir = new(cos, sin);
 
-            _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(center + dir * radius, 0), paint, _currentClip.Rect, _currentClip.Params);
+            _vertices[_vertexCount++] = new GuilVertex(new Vector3(center + dir * radius, 0), paint, _currentClip.Rect, _currentClip.Params);
 
-            _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(center + dir * fringeRadius, 0), paint, _currentClip.Rect, _currentClip.Params) {
+            _vertices[_vertexCount++] = new GuilVertex(new Vector3(center + dir * fringeRadius, 0), paint, _currentClip.Rect, _currentClip.Params) {
                 ColorA = Color.Transparent,
                 ColorB = Color.Transparent
             };
@@ -765,8 +765,8 @@ public class GuilBatch {
                 pivot.Y + dx * rotSin + dy * rotCos);
         }
 
-        PrimitiveVertex Vert(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params);
-        PrimitiveVertex VertTransparent(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params) {
+        GuilVertex Vert(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params);
+        GuilVertex VertTransparent(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params) {
             ColorA = Color.Transparent,
             ColorB = Color.Transparent
         };
@@ -1001,9 +1001,9 @@ public class GuilBatch {
                     );
                 }
 
-                _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(worldBase, 0), getUV(basePos), texIndex, paint, _currentClip.Rect, _currentClip.Params);
+                _vertices[_vertexCount++] = new GuilVertex(new Vector3(worldBase, 0), getUV(basePos), texIndex, paint, _currentClip.Rect, _currentClip.Params);
 
-                _vertices[_vertexCount++] = new PrimitiveVertex(new Vector3(worldFringe, 0), getUV(basePos), texIndex, paint, _currentClip.Rect, _currentClip.Params) {
+                _vertices[_vertexCount++] = new GuilVertex(new Vector3(worldFringe, 0), getUV(basePos), texIndex, paint, _currentClip.Rect, _currentClip.Params) {
                     ColorA = Color.Transparent,
                     ColorB = Color.Transparent
                 };
@@ -1099,7 +1099,7 @@ public class GuilBatch {
         int startIdx = _vertexCount;
         Vector2 centerPos = position + actualSize * 0.5f;
 
-        _vertices[_vertexCount++] = new PrimitiveVertex(
+        _vertices[_vertexCount++] = new GuilVertex(
             new Vector3(transform(centerPos), 0f),
             getUV(centerPos), texIndex,
             actualTint, _currentClip.Rect, _currentClip.Params);
@@ -1111,7 +1111,7 @@ public class GuilBatch {
                 (float sin, float cos) = float.SinCos(angle);
                 Vector2 pos = outCenters[c] + new Vector2(cos, sin) * outR;
 
-                _vertices[_vertexCount++] = new PrimitiveVertex(
+                _vertices[_vertexCount++] = new GuilVertex(
                     new Vector3(transform(pos), 0f),
                     getUV(pos), texIndex,
                     actualTint, _currentClip.Rect, _currentClip.Params);
@@ -1150,7 +1150,7 @@ public class GuilBatch {
 
         DrawTexture(texture, destinationRectangle.Position, destinationRectangle.Size, sourceRectangle, paint, rotation, rounding, effects, cornerQuality, aaSize);
     }
-    public void DrawQuad(PrimitiveVertex v0, PrimitiveVertex v1, PrimitiveVertex v2, PrimitiveVertex v3) {
+    public void DrawQuad(GuilVertex v0, GuilVertex v1, GuilVertex v2, GuilVertex v3) {
         ensureBegun();
         ensureCapacity(4, 6);
 
@@ -1175,7 +1175,7 @@ public class GuilBatch {
         _indices[_indexCount++] = (short)(startIdx + 3);
     }
 
-    public void DrawQuad(Texture2D texture, PrimitiveVertex v0, PrimitiveVertex v1, PrimitiveVertex v2, PrimitiveVertex v3) {
+    public void DrawQuad(Texture2D texture, GuilVertex v0, GuilVertex v1, GuilVertex v2, GuilVertex v3) {
         ensureBegun();
         int texIndex = getTextureIndex(texture);
         ensureCapacity(4, 6);

@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Guilred.Rendering;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct PrimitiveVertex : IVertexType {
+public struct GuilVertex : IVertexType {
     public Vector3 Position;
     public Vector4 ClipRect;
     public Vector2 ClipParams;
@@ -26,7 +26,7 @@ public struct PrimitiveVertex : IVertexType {
         new VertexElement(76, VertexElementFormat.Vector3, VertexElementUsage.TextureCoordinate, 4)
     );
 
-    public PrimitiveVertex(in Vector3 pos, in Paint paint, in Vector4 clipRect, in Vector2 clipParams) {
+    public GuilVertex(Vector3 pos, in Paint paint, Vector4 clipRect, Vector2 clipParams) {
         Position = pos;
         ClipRect = clipRect;
         ClipParams = clipParams;
@@ -39,7 +39,7 @@ public struct PrimitiveVertex : IVertexType {
         PaintParams = new Vector3(paint.OffsetA, paint.OffsetB, packedData);
     }
 
-    public PrimitiveVertex(in Vector3 pos, in Vector2 texCoords, int index, in Paint paint, in Vector4 clipRect, in Vector2 clipParams) {
+    public GuilVertex(Vector3 pos, Vector2 texCoords, int index, in Paint paint, Vector4 clipRect, Vector2 clipParams) {
         Position = pos;
         ClipRect = clipRect;
         ClipParams = clipParams;

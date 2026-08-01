@@ -19,14 +19,23 @@
 			<LogicalName>GuilBatch.guilbatch-effect.mgfx</LogicalName>
 		</EmbeddedResource>
 	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Effects/texbatch-effect.mgfx">
+			<LogicalName>TexBatch.texbatch-effect.mgfx</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
 
 	<Target Name="RestoreTools" BeforeTargets="CompileShaders">
 		<Exec Command="dotnet tool restore" />
 	</Target>
 
-	<Target Name="CompileShaders" BeforeTargets="BeforeBuild" DependsOnTargets="RestoreTools" Inputs="Effects/guilbatch-effect.fx" Outputs="Effects/guilbatch-effect.mgfx">
+	<Target Name="CompileGuilBatchShader" BeforeTargets="BeforeBuild" DependsOnTargets="RestoreTools" Inputs="Effects/guilbatch-effect.fx" Outputs="Effects/guilbatch-effect.mgfx">
 		<Message Importance="High" Text="&gt; Compiling GuilBatch Shader..." />
 		<Exec Command="dotnet tool run mgfxc Effects/guilbatch-effect.fx Effects/guilbatch-effect.mgfx /Profile:OpenGL" />
+	</Target>
+	<Target Name="CompileTexBatchShader" BeforeTargets="BeforeBuild" DependsOnTargets="RestoreTools" Inputs="Effects/texbatch-effect.fx" Outputs="Effects/texbatch-effect.mgfx">
+		<Message Importance="High" Text="&gt; Compiling TexBatch Shader..." />
+		<Exec Command="dotnet tool run mgfxc Effects/texbatch-effect.fx Effects/texbatch-effect.mgfx /Profile:OpenGL" />
 	</Target>
 
 </Project>

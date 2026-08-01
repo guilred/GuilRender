@@ -16,6 +16,7 @@ public class Tests : Game {
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
     private GuilBatch _guilBatch;
+    private Texbatch _texbatch;
     private GuilFont _guilFont;
     private Texture2D _mg;
     private Texture2D _gr;
@@ -43,6 +44,7 @@ public class Tests : Game {
     protected override void LoadContent() {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _guilBatch = new GuilBatch(GraphicsDevice);
+        _texbatch = new Texbatch(GraphicsDevice);
         _guilFont = new GuilFont(GraphicsDevice, _guilBatch, "Content/FreckleFace.guif", GraphicsDevice.GraphicsProfile);
         _mg = Content.Load<Texture2D>("mg");
         _gr = Content.Load<Texture2D>("gr");
