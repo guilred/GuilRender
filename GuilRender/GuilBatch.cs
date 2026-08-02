@@ -80,7 +80,7 @@ public class GuilBatch {
         _currentSamplerState = samplerState ?? SamplerState.LinearClamp;
         _begun = true;
         //d_time += 1 / 60f;
-        _currentClip = new ClipState { Rect = new(0, 0, -1, 0), Params = Vector2.Zero };
+        _currentClip = new ClipState { Rect = new(0, 0, -1, 0), Params = Vector3.Zero };
     }
 
     public void SetTransform(Matrix? view = null, Matrix? projection = null) {
@@ -172,14 +172,14 @@ public class GuilBatch {
         }
     }
 
-    private record struct ClipState(Vector4 Rect, Vector2 Params);
+    private record struct ClipState(Vector4 Rect, Vector3 Params);
 
     private const int MaxClips = 2048;
     private readonly Stack<ClipState> _clipStack = new();
-    private ClipState _currentClip = new() { Rect = Vector4.Zero, Params = Vector2.Zero };
+    private ClipState _currentClip = new() { Rect = Vector4.Zero, Params = Vector3.Zero };
     private ClipState? _previousClip;
 
-    public void PushClip(RectangleF clipRect, float rounding = 0f, Rotation rotation = default, bool intersect = true, bool push = true) {
+    public void PushClip(RectangleF clipRect, float rounding = 0f, Rotation rotation = default, bool intersect = true, bool invert = false, bool push = true) {
         if (!push) return;
         if (rotation.Exists && rotation.Pivot is Vector2 pivot)
             clipRect.Rotate(rotation.Angle, pivot);
@@ -199,7 +199,7 @@ public class GuilBatch {
             }
         }
 
-        _currentClip = new ClipState { Rect = newRect, Params = new Vector2(rounding, rotation.Angle) };
+        _currentClip = new ClipState { Rect = newRect, Params = new Vector3(rounding, rotation.Angle, invert ? 1 : 0) };
         _clipStack.Push(_currentClip);
     }
 
@@ -218,7 +218,7 @@ public class GuilBatch {
         }
         _currentClip = _clipStack.Count > 0
             ? _clipStack.Peek()
-            : new ClipState { Rect = new(0, 0, -1, 0), Params = Vector2.Zero };
+            : new ClipState { Rect = new(0, 0, -1, 0), Params = Vector3.Zero };
     }
 
     private int getTextureIndex(Texture2D texture) {
@@ -235,9 +235,9 @@ public class GuilBatch {
     }
 
     private void addRingSegment(Vector2 center, float innerRadius, float outerRadius, float startAngle, float endAngle, Paint paint, int segments) {
-        if (segments < 1 || paint.ColorA.A == 0 || outerRadius <= 0) return;
+        if (segments < 1 || paint.IsTransparent() || innerRadius <= 0 && outerRadius <= 0) return;
 
-        if (innerRadius <= 0.001f) {
+        if (innerRadius <= 0.001f * CameraZoom) {
             ensureCapacity(segments + 2, segments * 3);
             int startIdx = _vertexCount;
 
@@ -670,7 +670,7 @@ public class GuilBatch {
             var padding = Vector2.One * borderThickness;
             size -= padding * 2;
             fillPaint = transformPaint(fillPaint, center, -Vector2.One * radius + padding, 0f, size);
-            addRingSegment(center, 0, innerRadius, 0, float.Tau, fillPaint, segments);
+            addRingSegment(center, innerRadius, 0, 0, float.Tau, fillPaint, segments);
         }
 
         if (aaSize == 0f) return;

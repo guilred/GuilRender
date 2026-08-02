@@ -20,27 +20,27 @@ sampler2D Sampler6 : register(s6);
 sampler2D Sampler7 : register(s7);
 
 struct VSInput {
-    float4 Position : POSITION0;
-    float4 ClipRect : TEXCOORD0;
-    float2 ClipParams : TEXCOORD1;
-    float4 ColorA : COLOR0;
-    float4 ColorB : COLOR1;
-    float4 TexCoords : TEXCOORD2;
+    float4 Position     : POSITION0;
+    float4 ClipRect     : TEXCOORD0;
+    float3 ClipParams   : TEXCOORD1;
+    float4 ColorA       : COLOR0;
+    float4 ColorB       : COLOR1;
+    float3 TexCoords    : TEXCOORD2;
     float4 GradientCoords : TEXCOORD3;
-    float3 PaintParams : TEXCOORD4;
+    float3 PaintParams  : TEXCOORD4;
 };
 
 struct VSOutput {
-    float4 Position : SV_POSITION;
-    float4 ClipRect : TEXCOORD0;
-    float2 ClipParams : TEXCOORD1;
-    float4 ColorA : COLOR0;
-    float4 ColorB : COLOR1;
-    float4 TexCoords : TEXCOORD2;
+    float4 Position     : SV_POSITION;
+    float4 ClipRect     : TEXCOORD0;
+    float3 ClipParams   : TEXCOORD1;
+    float4 ColorA       : COLOR0;
+    float4 ColorB       : COLOR1;
+    float3 TexCoords    : TEXCOORD2;
     float4 GradientCoords : TEXCOORD3;
     float2 PaintOffsets : TEXCOORD4;
-    float3 PaintParams : TEXCOORD5;
-    float2 ScreenPos : TEXCOORD6;
+    float3 PaintParams  : TEXCOORD5;
+    float2 ScreenPos    : TEXCOORD6;
 };
 
 VSOutput VS(VSInput input) {
@@ -102,11 +102,12 @@ float4 PS(VSOutput input) : SV_TARGET {
     float2 clipWH = input.ClipRect.zw;
     [branch]
     if (clipWH.x >= 0.0 && clipWH.y >= 0.0) {
-        float2 clipXY = input.ClipRect.xy;
-        float radius = input.ClipParams.x;
-        float rotation = input.ClipParams.y;
+        float2 clipXY   = input.ClipRect.xy;
+        float radius    = input.ClipParams.x;
+        float rotation  = input.ClipParams.y;
+        float  invert   = input.ClipParams.z;
 
-        float2 center = clipXY + clipWH * 0.5;
+        float2 center   = clipXY + clipWH * 0.5;
         float2 halfSize = clipWH * 0.5;
 
         float2 p = pixelPos;
@@ -115,7 +116,9 @@ float4 PS(VSOutput input) : SV_TARGET {
             p = Rotate(p, center, -rotation);
 
         float d = RoundedRectSDF(p, center, halfSize, radius);
-        alphaMask = 1.0 - smoothstep(-clipSmoothing, clipSmoothing, d);
+        float step = smoothstep(-clipSmoothing, clipSmoothing, d);
+        alphaMask = lerp(1.0 - step, step, invert);
+
         clip(alphaMask - 0.001);
     }
 
@@ -123,17 +126,17 @@ float4 PS(VSOutput input) : SV_TARGET {
     float offsetA = input.PaintOffsets.x;
     float offsetB = input.PaintOffsets.y;
 
-    float paintType = input.PaintParams.x;
+    float paintType  = input.PaintParams.x;
     float easingType = input.PaintParams.y;
-    float power = input.PaintParams.z;
+    float power      = input.PaintParams.z;
 
     float4 gradientColor = input.ColorA;
     [branch]
     if (paintType < 1.25) {
         float2 start = input.GradientCoords.xy;
-        float2 end = input.GradientCoords.zw;
-        float2 dir = end - start;
-        float sqLen = dot(dir, dir);
+        float2 end   = input.GradientCoords.zw;
+        float2 dir   = end - start;
+        float sqLen  = dot(dir, dir);
 
         float t_raw = dot(pixelPos - start, dir) / max(sqLen, 0.0001);
         float t = saturate((t_raw - offsetA) / max(offsetB - offsetA, 0.0001));
@@ -142,9 +145,9 @@ float4 PS(VSOutput input) : SV_TARGET {
         gradientColor = lerp(input.ColorA, input.ColorB, t);
     } else if (paintType < 2.25) {
         float2 center = input.GradientCoords.xy;
-        float2 edge = input.GradientCoords.zw;
-        float radius = distance(center, edge);
-        float d = distance(pixelPos, center);
+        float2 edge   = input.GradientCoords.zw;
+        float radius  = distance(center, edge);
+        float d       = distance(pixelPos, center);
 
         float t_raw = d / max(radius, 0.0001);
         float t = saturate((t_raw - offsetA) / max(offsetB - offsetA, 0.0001));
@@ -157,11 +160,11 @@ float4 PS(VSOutput input) : SV_TARGET {
     float4 texColor = float4(1, 1, 1, 1);
     [branch]
     if (input.TexCoords.z >= 0.0) {
-        int texIndex = (int) (input.TexCoords.z + 0.1);
+        int texIndex = (int)(input.TexCoords.z + 0.1);
         float2 uv = input.TexCoords.xy;
         [branch]
         if (texIndex == 0) {
-            texColor = tex2D(Sampler0, uv); 
+            texColor = tex2D(Sampler0, uv);
         } else if (texIndex == 1) {
             texColor = tex2D(Sampler1, uv);
         } else if (texIndex == 2) {
@@ -178,7 +181,7 @@ float4 PS(VSOutput input) : SV_TARGET {
             texColor = tex2D(Sampler7, uv);
         }
     }
-    
+
     // 4- Final composition
     return gradientColor * texColor * alphaMask;
 }
@@ -186,6 +189,6 @@ float4 PS(VSOutput input) : SV_TARGET {
 technique Primitive {
     pass P0 {
         VertexShader = compile VS_SHADERMODEL VS();
-        PixelShader = compile PS_SHADERMODEL PS();
+        PixelShader  = compile PS_SHADERMODEL PS();
     }
 }

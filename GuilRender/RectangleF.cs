@@ -250,6 +250,13 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
         Width *= scale.X;
         Height *= scale.Y;
     }
+    public void Scale(float scaleX, float scaleY, Vector2 origin) {
+        if (scaleX == 1 && scaleY == 1) return;
+        X = origin.X + (X - origin.X) * scaleX;
+        Y = origin.Y + (Y - origin.Y) * scaleY;
+        Width *= scaleX;
+        Height *= scaleY;
+    }
 
     public void FitAndCenter(float aspectRatio) {
         FitAndAlign(aspectRatio, Anchor.Center);
