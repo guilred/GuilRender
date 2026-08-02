@@ -28,7 +28,7 @@ public class GuilBatch {
 
     private readonly DynamicVertexBuffer _vertexBuffer;
     private readonly DynamicIndexBuffer _indexBuffer;
-    
+
     private readonly GuilVertex[] _vertices = new GuilVertex[MaxVertices];
     private readonly short[] _indices = new short[MaxIndices];
     private int _vertexCount;
@@ -470,11 +470,20 @@ public class GuilBatch {
         }
     }
 
+    public void DrawRectangle(RectangleF rect, Paint fillPaint, Paint borderPaint, float borderThickness, float rounding = 0, Rotation rotation = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawRectangle(rect.Position, rect.Size, fillPaint, borderPaint, borderThickness, rounding, rotation, cornerQuality, aaSize);
+
     public void FillRectangle(Vector2 position, Vector2 size, Paint fillPaint, float rounding = 0f, Rotation rotation = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawRectangle(position, size, fillPaint, default, 0, rounding, rotation, cornerQuality, aaSize);
 
+    public void FillRectangle(RectangleF rect, Paint fillPaint, float rounding = 0f, Rotation rotation = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawRectangle(rect.Position, rect.Size, fillPaint, default, 0, rounding, rotation, cornerQuality, aaSize);
+
     public void BorderRectangle(Vector2 position, Vector2 size, Paint borderPaint, float borderThickness, float rounding = 0f, Rotation rotation = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawRectangle(position, size, default, borderPaint, borderThickness, rounding, rotation, cornerQuality, aaSize);
+
+    public void BorderRectangle(RectangleF rect, Paint borderPaint, float borderThickness, float rounding = 0f, Rotation rotation = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawRectangle(rect.Position, rect.Size, default, borderPaint, borderThickness, rounding, rotation, cornerQuality, aaSize);
 
     public void DrawLine(Vector2 start, Vector2 end, Paint fillPaint, Paint borderPaint, float thickness, float borderThickness, Rotation rotation = default, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f) {
         ensureBegun();
@@ -892,11 +901,20 @@ public class GuilBatch {
         }
     }
 
+    public void DrawEllipse(RectangleF rect, Paint fillPaint, Paint borderPaint, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(rect.Position, rect.Size, fillPaint, borderPaint, borderThickness, rotation, quality, aaSize);
+
     public void FillEllipse(Vector2 position, Vector2 size, Paint fillPaint, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawEllipse(position, size, fillPaint, default, 0f, rotation, quality, aaSize);
 
+    public void FillEllipse(RectangleF rect, Paint fillPaint, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(rect.Position, rect.Size, fillPaint, default, 0f, rotation, quality, aaSize);
+
     public void BorderEllipse(Vector2 position, Vector2 size, Paint borderPaint, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawEllipse(position, size, default, borderPaint, borderThickness, rotation, quality, aaSize);
+
+    public void BorderEllipse(RectangleF rect, Paint borderPaint, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
+        => DrawEllipse(rect.Position, rect.Size, default, borderPaint, borderThickness, rotation, quality, aaSize);
 
     public void DrawEllipse(Vector2 center, float xRadius, float yRadius, Paint fillPaint, Paint borderPaint, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
         Vector2 size = new(xRadius * 2f, yRadius * 2f);

@@ -115,7 +115,7 @@ float4 PS(VSOutput input) : SV_TARGET {
             p = Rotate(p, center, -rotation);
 
         float d = RoundedRectSDF(p, center, halfSize, radius);
-        alphaMask = 1.0 - smoothstep(-clipSmoothing, 0.5f, d);
+        alphaMask = 1.0 - smoothstep(-clipSmoothing, clipSmoothing, d);
         clip(alphaMask - 0.001);
     }
 
