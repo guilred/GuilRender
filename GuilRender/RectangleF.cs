@@ -45,18 +45,18 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
         return new RectangleF(rectangle);
     }
 
-    public static RectangleF FromCircle(Vector2 center, float radius) {
+    public static RectangleF FromRadius(Vector2 center, float radius) {
         var extent = Vector2.One * radius;
         return new RectangleF(center - extent, extent * 2);
     }
 
-    public static RectangleF FromEllipse(Vector2 center, float xRadius, float yRadius) {
+    public static RectangleF FromRadiusXY(Vector2 center, float xRadius, float yRadius) {
         var extent = new Vector2(xRadius, yRadius);
         return new RectangleF(center - extent, extent * 2);
     }
 
-    public static RectangleF FromEllipse(Vector2 center, Vector2 radius) {
-        return FromEllipse(center, radius.X, radius.Y);
+    public static RectangleF FromRadiusXY(Vector2 center, Vector2 radius) {
+        return FromRadiusXY(center, radius.X, radius.Y);
     }
 
     public static RectangleF FromLTRB(float left, float top, float right, float bottom) {
@@ -115,6 +115,10 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
     public readonly Vector2 BL => BottomLeft;
     public readonly Vector2 BR => BottomRight;
     public readonly (Vector2 TL, Vector2 TR, Vector2 BR, Vector2 BL) Corners => (TopLeft, TopRight, BottomRight, BottomLeft);
+    public readonly void GetCorners(Span<Vector2> target) {
+        target[0] = TL; target[1] = TR;
+        target[2] = BR; target[3] = BL;
+    }
     #endregion
 
     #region Queries & Intersections
