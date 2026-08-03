@@ -114,6 +114,8 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
     public readonly Vector2 TR => TopRight;
     public readonly Vector2 BL => BottomLeft;
     public readonly Vector2 BR => BottomRight;
+    public readonly float HalfWidth => Width / 2;
+    public readonly float HalfHeight => Height / 2;
     public readonly (Vector2 TL, Vector2 TR, Vector2 BR, Vector2 BL) Corners => (TopLeft, TopRight, BottomRight, BottomLeft);
     public readonly void GetCorners(Span<Vector2> target) {
         target[0] = TL; target[1] = TR;

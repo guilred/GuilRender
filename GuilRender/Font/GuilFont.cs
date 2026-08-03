@@ -173,7 +173,8 @@ public sealed class GuilFont : IDisposable {
         public readonly float SpacingScale;
 
         public FontContext(GuilFont font, float height, float? spacing, float? lineSpacing, GuilBatch? batch = null) {
-            (Atlas, LargestAtlas) = (font.getBestAtlas(height * (batch?.CameraZoom ?? 1)), font._atlases[^1]);
+            var zoom = batch?.CameraZoom ?? 1;
+            (Atlas, LargestAtlas) = (font.getBestAtlas(height * zoom), font._atlases[^1]);
             (SpacingScale, AtlasScale, LAtlasScale) = (height / 120f, height / Atlas.Size, height / LargestAtlas.Size);
             (Spacing, LineSpacing) = ((spacing ?? font.Spacing) * SpacingScale, lineSpacing ?? font.LineSpacing);
         }
