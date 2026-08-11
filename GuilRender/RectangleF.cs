@@ -62,6 +62,10 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
     public static RectangleF FromLTRB(float left, float top, float right, float bottom) {
         return new RectangleF(left, top, right - left, bottom - top);
     }
+    public static RectangleF FromTwoPoints(Vector2 a, Vector2 b) {
+        var (min, max) = (Vector2.Min(a, b), Vector2.Max(a, b));
+        return new RectangleF(min, max - min);
+    }
 
     public static RectangleF FromWidth(float width) => new(0, 0, width, 0);
     public static RectangleF FromHeight(float height) => new(0, 0, 0, height);
