@@ -237,7 +237,7 @@ public class GuilBatch {
     private void addRingSegment(Vector2 center, float innerRadius, float outerRadius, float startAngle, float endAngle, Paint paint, int segments) {
         if (segments < 1 || paint.IsTransparent() || innerRadius <= 0 && outerRadius <= 0) return;
 
-        if (innerRadius <= 0.001f * CameraZoom) {
+        if (innerRadius <= 0.001f / CameraZoom) {
             ensureCapacity(segments + 2, segments * 3);
             int startIdx = _vertexCount;
 
