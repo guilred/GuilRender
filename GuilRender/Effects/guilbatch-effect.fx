@@ -18,6 +18,14 @@ sampler2D Sampler4 : register(s4);
 sampler2D Sampler5 : register(s5);
 sampler2D Sampler6 : register(s6);
 sampler2D Sampler7 : register(s7);
+sampler2D Sampler8 : register(s8);
+sampler2D Sampler9 : register(s9);
+sampler2D Sampler10 : register(s10);
+sampler2D Sampler11 : register(s11);
+sampler2D Sampler12 : register(s12);
+sampler2D Sampler13 : register(s13);
+sampler2D Sampler14 : register(s14);
+sampler2D Sampler15 : register(s15);
 
 struct VSInput {
     float4 Position     : POSITION0;
@@ -179,6 +187,22 @@ float4 PS(VSOutput input) : SV_TARGET {
             texColor = tex2D(Sampler6, uv);
         } else if (texIndex == 7) {
             texColor = tex2D(Sampler7, uv);
+        } else if (texIndex == 8) {
+            texColor = tex2D(Sampler8, uv);
+        } else if (texIndex == 9) {
+            texColor = tex2D(Sampler9, uv);
+        } else if (texIndex == 10) {
+            texColor = tex2D(Sampler10, uv);
+        } else if (texIndex == 11) {
+            texColor = tex2D(Sampler11, uv);
+        } else if (texIndex == 12) {
+            texColor = tex2D(Sampler12, uv);
+        } else if (texIndex == 13) {
+            texColor = tex2D(Sampler13, uv);
+        } else if (texIndex == 14) {
+            texColor = tex2D(Sampler14, uv);
+        } else if (texIndex == 15) {
+            texColor = tex2D(Sampler15, uv);
         }
     }
 

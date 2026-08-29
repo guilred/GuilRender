@@ -12,6 +12,7 @@ namespace Guilred.Rendering;
 public class GuilBatch {
     private const int MaxVertices = 8192;
     private const int MaxIndices = MaxVertices * 3;
+    private const int MaxTextures = 16;
 
     public readonly GraphicsDevice Graphics;
 
@@ -21,9 +22,9 @@ public class GuilBatch {
     private readonly EffectParameter _clipSmoothingParam;
     private BlendState _currentBlendState = BlendState.AlphaBlend;
     private SamplerState _currentSamplerState = SamplerState.LinearClamp;
-    private readonly SamplerState[] _prevSamplerStatesBuffer = new SamplerState[8];
+    private readonly SamplerState[] _prevSamplerStatesBuffer = new SamplerState[MaxTextures];
 
-    private readonly Texture2D?[] _textures = new Texture2D[8];
+    private readonly Texture2D?[] _textures = new Texture2D[MaxTextures];
     private int _textureCount = 0;
 
     private readonly DynamicVertexBuffer _vertexBuffer;
@@ -226,7 +227,7 @@ public class GuilBatch {
             if (_textures[i] == texture) return i;
         }
 
-        if (_textureCount >= 8) {
+        if (_textureCount >= MaxTextures) {
             flush();
         }
 
