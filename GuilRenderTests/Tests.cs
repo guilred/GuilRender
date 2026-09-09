@@ -87,7 +87,7 @@ public class Tests : Game {
     protected override void Draw(GameTime gameTime) {
         if (!IsActive) return;
 
-        int SCENE = 0;
+        int SCENE = 2;
         float time = (float)gameTime.TotalGameTime.TotalSeconds;
         var wave = float.Pow(float.Sin(time * 0.25f * float.Pi), 2);
         var mpos = Mouse.GetState().Position.ToVector2();
@@ -254,12 +254,21 @@ public class Tests : Game {
 
             //_guilBatch.FillRectangle(pos, size, Color.Black, 40, (float.Pi / 2 * wave, pos));
             //_guilBatch.FillRectangle(pos, size, Color.Yellow, 40);
+            //var text = "ولما كان تناسي حقوق الإنسان وازدراؤها قد أفضيا إلى أعمال همجية";
+            //var font = _fontSystem.GetFont(60);
+            //var textSize = font.MeasureString(text);
+            //_guilBatch.FillRectangle(pos, textSize, Color.Red);
+            //font.DrawText(_guilBatch.FontRenderer, text, pos, Color.Green, origin: textSize / 2 * Vector2.UnitX);
             pos = new Vector2(600, 300);
-            var text = "ولما كان تناسي حقوق الإنسان وازدراؤها قد أفضيا إلى أعمال همجية";
-            var font = _fontSystem.GetFont(60);
-            var textSize = font.MeasureString(text);
-            _guilBatch.FillRectangle(pos, textSize, Color.Red);
-            font.DrawText(_guilBatch.FontRenderer, text, pos, Color.Green, origin: textSize / 2 * Vector2.UnitX);
+
+            var (colorA, colorB) = (Color.Blue, Color.Magenta);
+            if (squiWave > 0.5f) {
+                _guilBatch.FillCircle(pos, colorA, 199, aaSize: 0);
+                _guilBatch.BorderCircle(pos, Color.Lerp(colorA, colorB, 0.5f), 200.25f, 1.25f, aaSize: 0);
+                _guilBatch.BorderCircle(pos, colorB, 250, 50, aaSize: 0);
+            }
+            else
+                _guilBatch.DrawCircle(pos, colorA, colorB, 250, 50);
 
             _guilBatch.End();
         }

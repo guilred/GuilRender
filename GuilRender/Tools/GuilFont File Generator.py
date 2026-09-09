@@ -140,7 +140,7 @@ class GuilFontPackerUI:
         self.root = tk.Tk()
         self.root.title("Multi-Resolution GuilFont Packer")
         self.root.geometry("650x550")
-        self.font_path = None
+        self.font_paths = [] # CHANGED: Store multiple paths
         
         ttk.Label(self.root, text="Characters to include:", font=("Arial", 12)).pack(pady=10)
         
@@ -180,13 +180,13 @@ class GuilFontPackerUI:
         self.mono_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(button_container, text="Force Monospace (Max Width)", variable=self.mono_var).pack(side=tk.RIGHT, padx=15)
         
-        self.font_label = ttk.Label(self.root, text="No font selected", font=("Arial", 10), foreground="gray")
+        self.font_label = ttk.Label(self.root, text="No font(s) selected", font=("Arial", 10), foreground="gray")
         self.font_label.pack(pady=5)
         
         button_frame = ttk.Frame(self.root)
         button_frame.pack(pady=10)
         
-        self.choose_font_btn = ttk.Button(button_frame, text="Choose TTF Font", command=self.choose_font, width=20)
+        self.choose_font_btn = ttk.Button(button_frame, text="Choose TTF Font(s)", command=self.choose_fonts, width=20)
         self.choose_font_btn.pack(side=tk.LEFT, padx=10)
         
         self.export_btn = ttk.Button(button_frame, text="Export GUIF", command=self.export_guif, width=20, state=tk.DISABLED)
@@ -200,18 +200,22 @@ class GuilFontPackerUI:
         for var in self.size_vars.values():
             var.set(state)
     
-    def choose_font(self):
-        font_path = filedialog.askopenfilename(
-            title="Select Font",
+    def choose_fonts(self):
+        # CHANGED: Allow multiple file selection
+        font_paths = filedialog.askopenfilenames(
+            title="Select Fonts",
             filetypes=[("TrueType font", "*.ttf")]
         )
-        if font_path:
-            self.font_path = font_path
-            self.font_label.config(text=f"Font: {Path(font_path).name}", foreground="green")
+        if font_paths:
+            self.font_paths = list(font_paths)
+            if len(self.font_paths) == 1:
+                self.font_label.config(text=f"Font: {Path(self.font_paths[0]).name}", foreground="green")
+            else:
+                self.font_label.config(text=f"{len(self.font_paths)} fonts selected", foreground="green")
             self.export_btn.config(state=tk.NORMAL)
     
     def export_guif(self):
-        if not self.font_path:
+        if not self.font_paths:
             messagebox.showerror("Error", "Please choose a font first!")
             return
         
@@ -220,41 +224,58 @@ class GuilFontPackerUI:
             messagebox.showerror("Error", "Please enter characters to include!")
             return
         
-        # Parse sizes from checkboxes
         sizes = [size for size, var in self.size_vars.items() if var.get()]
         if not sizes:
             messagebox.showerror("Error", "Please select at least one font size!")
             return
         
-        sizes.sort()  # Ensure they're in order
+        sizes.sort()
         is_mono = self.mono_var.get()
         
-        self.status_label.config(text="Processing...", foreground="orange")
-        self.root.update()
-        
-        try:
-            chars_to_use = chars_input.replace("\n", "")
-            chars = list(dict.fromkeys(chars_to_use))
-            if '?' not in chars:
-                chars.append('?')
-            
+        chars_to_use = chars_input.replace("\n", "")
+        chars = list(dict.fromkeys(chars_to_use))
+        if '?' not in chars:
+            chars.append('?')
+
+        # CHANGED: Handle single file vs batch export
+        if len(self.font_paths) == 1:
             save_path = filedialog.asksaveasfilename(
                 title="Save GuilFont File",
-                initialfile=f"{Path(self.font_path).stem}.guif",
+                initialfile=f"{Path(self.font_paths[0]).stem}.guif",
                 defaultextension=".guif",
                 filetypes=[("GuilFont File", "*.guif")]
             )
-            
             if not save_path:
-                self.status_label.config(text="", foreground="black")
                 return
             
+            if self._process_single_font(self.font_paths[0], save_path, sizes, chars, is_mono):
+                self.status_label.config(text=f"Exported successfully with {len(sizes)} sizes!", foreground="green")
+                messagebox.showinfo("Success", f"Font exported to:\n{save_path}\n\nGenerated {len(sizes)} atlas sizes: {', '.join(map(str, sizes))}px")
+        
+        else:
+            # Batch export
+            save_dir = filedialog.askdirectory(title="Select Output Directory for Batch Export")
+            if not save_dir:
+                return
+            
+            success_count = 0
+            for font_path in self.font_paths:
+                out_path = Path(save_dir) / f"{Path(font_path).stem}.guif"
+                if self._process_single_font(font_path, str(out_path), sizes, chars, is_mono):
+                    success_count += 1
+            
+            self.status_label.config(text=f"Batch export complete! {success_count}/{len(self.font_paths)} successful.", foreground="green")
+            messagebox.showinfo("Success", f"Batch exported {success_count} fonts to:\n{save_dir}")
+
+    def _process_single_font(self, font_path, save_path, sizes, chars, is_mono):
+        """Helper to process and pack a single font"""
+        try:
             with zipfile.ZipFile(save_path, 'w', zipfile.ZIP_DEFLATED) as z:
                 for size in sizes:
-                    self.status_label.config(text=f"Generating atlas at {size}px...", foreground="orange")
+                    self.status_label.config(text=f"[{Path(font_path).name}] Generating atlas at {size}px...", foreground="orange")
                     self.root.update()
                     
-                    atlas, chars_data, actual_height = generate_atlas_at_size(self.font_path, size, chars, monospace=is_mono)
+                    atlas, chars_data, actual_height = generate_atlas_at_size(font_path, size, chars, monospace=is_mono)
                     
                     if atlas is None:
                         continue
@@ -266,14 +287,13 @@ class GuilFontPackerUI:
                 
                 metadata = f"sizes: {','.join(map(str, sizes))}"
                 z.writestr('metadata', metadata)
+            return True
             
-            self.status_label.config(text=f"Exported successfully with {len(sizes)} sizes!", foreground="green")
-            messagebox.showinfo("Success", f"Font exported to:\n{save_path}\n\nGenerated {len(sizes)} atlas sizes: {', '.join(map(str, sizes))}px")
-        
         except Exception as e:
-            self.status_label.config(text="Export failed!", foreground="red")
-            messagebox.showerror("Error", f"Export failed:\n{str(e)}")
-    
+            self.status_label.config(text=f"Export failed for {Path(font_path).name}!", foreground="red")
+            messagebox.showerror("Error", f"Export failed for {Path(font_path).name}:\n{str(e)}")
+            return False
+            
     def run(self):
         self.root.mainloop()
 
