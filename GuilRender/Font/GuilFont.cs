@@ -140,7 +140,7 @@ public sealed class GuilFont : IDisposable {
         return Spacing * height / 120f;
     }
 
-    private AtlasData getBestAtlas(float targetHeight) {
+    private AtlasData GetBestAtlas(float targetHeight) {
         var left = 0;
         var right = _atlases.Count - 1;
         if (targetHeight <= _atlases[0].Size) return _atlases[0];
@@ -174,13 +174,13 @@ public sealed class GuilFont : IDisposable {
 
         public FontContext(GuilFont font, float height, float? spacing, float? lineSpacing, GuilBatch? batch = null) {
             var zoom = batch?.CameraZoom ?? 1;
-            (Atlas, LargestAtlas) = (font.getBestAtlas(height * zoom), font._atlases[^1]);
+            (Atlas, LargestAtlas) = (font.GetBestAtlas(height * zoom), font._atlases[^1]);
             (SpacingScale, AtlasScale, LAtlasScale) = (height / 120f, height / Atlas.Size, height / LargestAtlas.Size);
             (Spacing, LineSpacing) = ((spacing ?? font.Spacing) * SpacingScale, lineSpacing ?? font.LineSpacing);
         }
     }
 
-    private static float getCharWidth(char c, in FontContext ctx) {
+    private static float GetCharWidth(char c, in FontContext ctx) {
         if (c == ' ') {
             return ctx.LargestAtlas.CharsData.TryGetValue('$', out var dlr)
                 ? dlr.w * ctx.LAtlasScale + ctx.Spacing
@@ -219,7 +219,7 @@ public sealed class GuilFont : IDisposable {
                 currWidth = 0;
                 continue;
             }
-            currWidth += getCharWidth(c, in ctx);
+            currWidth += GetCharWidth(c, in ctx);
         }
         size.X = float.Max(size.X, currWidth - ctx.Spacing);
         return size;
@@ -269,7 +269,7 @@ public sealed class GuilFont : IDisposable {
 
             for (var i = 0; i < line.Length; i++) {
                 var c = line[i];
-                var charWidth = getCharWidth(c, in ctx);
+                var charWidth = GetCharWidth(c, in ctx);
 
                 if (c == ' ' || c == '\t') {
                     currX += charWidth;
@@ -297,7 +297,7 @@ public sealed class GuilFont : IDisposable {
     }
 
     private readonly List<int> _starts = new(256);
-    private List<int> getVisualLineStarts(ReadOnlySpan<char> segment, float posX, float wrapX, in FontContext ctx) {
+    private List<int> GetVisualLineStarts(ReadOnlySpan<char> segment, float posX, float wrapX, in FontContext ctx) {
         _starts.Clear();
         _starts.Add(0);
         var currX = posX;
@@ -306,7 +306,7 @@ public sealed class GuilFont : IDisposable {
             var c = segment[i];
             if (c == '\n') continue;
 
-            var charWidth = getCharWidth(c, in ctx);
+            var charWidth = GetCharWidth(c, in ctx);
             if (c == ' ' || c == '\t') { currX += charWidth; continue; }
 
             var prevChar = i > 0 ? segment[i - 1] : ' ';
@@ -315,7 +315,7 @@ public sealed class GuilFont : IDisposable {
                 for (var k = i; k < segment.Length; k++) {
                     var wc = segment[k];
                     if (wc == ' ' || wc == '\n') break;
-                    wordWidth += getCharWidth(wc, in ctx);
+                    wordWidth += GetCharWidth(wc, in ctx);
                 }
                 if (currX != posX && currX + wordWidth > wrapX) {
                     currX = posX;
@@ -331,12 +331,12 @@ public sealed class GuilFont : IDisposable {
         return _starts;
     }
 
-    private static void measureWrappedSegment(ReadOnlySpan<char> segment, ref float currX, ref float currY, ref float maxX, Vector2 position, float height, float wrapX, in FontContext ctx) {
+    private static void MeasureWrappedSegment(ReadOnlySpan<char> segment, ref float currX, ref float currY, ref float maxX, Vector2 position, float height, float wrapX, in FontContext ctx) {
         for (var i = 0; i < segment.Length; i++) {
             var c = segment[i];
             if (c == '\n') continue;
 
-            var charWidth = getCharWidth(c, in ctx);
+            var charWidth = GetCharWidth(c, in ctx);
             if (c == ' ' || c == '\t') {
                 if (i < segment.Length) currX += charWidth;
                 continue;
@@ -348,7 +348,7 @@ public sealed class GuilFont : IDisposable {
                 for (var k = i; k < segment.Length; k++) {
                     var wc = segment[k];
                     if (wc == ' ' || wc == '\n') break;
-                    wordWidth += getCharWidth(wc, in ctx);
+                    wordWidth += GetCharWidth(wc, in ctx);
                 }
                 if (currX != position.X && currX + wordWidth > wrapX) {
                     maxX = float.Max(maxX, currX);
@@ -383,7 +383,7 @@ public sealed class GuilFont : IDisposable {
             var nl = slice.IndexOf('\n');
             var line = nl < 0 ? slice : slice[..nl];
 
-            measureWrappedSegment(line, ref currX, ref currY, ref maxX, origin, height, wrapX, in ctx);
+            MeasureWrappedSegment(line, ref currX, ref currY, ref maxX, origin, height, wrapX, in ctx);
             if (nl < 0) break;
 
             maxX = float.Max(maxX, currX);
@@ -401,7 +401,7 @@ public sealed class GuilFont : IDisposable {
         var origin = new Vector2(posX, 0);
 
         for (var i = 0; i < lines.Count; i++) {
-            measureWrappedSegment(CollectionsMarshal.AsSpan(lines[i]), ref currX, ref currY, ref maxX, origin, height, wrapX, in ctx);
+            MeasureWrappedSegment(CollectionsMarshal.AsSpan(lines[i]), ref currX, ref currY, ref maxX, origin, height, wrapX, in ctx);
             maxX = float.Max(maxX, currX);
             currX = posX;
 
@@ -445,7 +445,7 @@ public sealed class GuilFont : IDisposable {
             var lineLength = nl < 0 ? slice.Length : nl;
             var line = slice[..lineLength];
 
-            var vs = getVisualLineStarts(line, position.X, wrapX, in ctx);
+            var vs = GetVisualLineStarts(line, position.X, wrapX, in ctx);
             for (var v = 0; v < vs.Count; v++) {
                 var start = vs[v];
                 var end = v < vs.Count - 1 ? vs[v + 1] : line.Length;
@@ -460,7 +460,7 @@ public sealed class GuilFont : IDisposable {
 
                 for (var i = 0; i < subLine.Length; i++) {
                     var c = subLine[i];
-                    var charWidth = getCharWidth(c, in ctx);
+                    var charWidth = GetCharWidth(c, in ctx);
 
                     if (c == ' ' || c == '\t') {
                         currX += charWidth;
@@ -514,7 +514,7 @@ public sealed class GuilFont : IDisposable {
         for (var j = 0; j < lines.Count; j++) {
             var span = CollectionsMarshal.AsSpan(lines[j]);
 
-            var vs = getVisualLineStarts(span, position.X, wrapX, in ctx);
+            var vs = GetVisualLineStarts(span, position.X, wrapX, in ctx);
             for (var v = 0; v < vs.Count; v++) {
                 var start = vs[v];
                 var end = v < vs.Count - 1 ? vs[v + 1] : span.Length;
@@ -529,7 +529,7 @@ public sealed class GuilFont : IDisposable {
 
                 for (var i = 0; i < subLine.Length; i++) {
                     var c = subLine[i];
-                    var charWidth = getCharWidth(c, in ctx);
+                    var charWidth = GetCharWidth(c, in ctx);
 
                     if (c == ' ' || c == '\t') {
                         currX += charWidth;
@@ -586,7 +586,7 @@ public sealed class GuilFont : IDisposable {
         var cursorX = textX;
 
         for (var i = 0; i < line.Length; i++) {
-            var charWidth = line[i] == '\n' ? 0 : getCharWidth(line[i], in ctx);
+            var charWidth = line[i] == '\n' ? 0 : GetCharWidth(line[i], in ctx);
             var charRightX = cursorX + charWidth;
 
             if (charRightX > targetX)
@@ -654,7 +654,7 @@ public sealed class GuilFont : IDisposable {
 
         for (var j = 0; j < lines.Count; j++) {
             var span = CollectionsMarshal.AsSpan(lines[j]);
-            var visualStarts = getVisualLineStarts(span, position.X, wrapX, in ctx);
+            var visualStarts = GetVisualLineStarts(span, position.X, wrapX, in ctx);
 
             for (var v = 0; v < visualStarts.Count; v++) {
                 var isLast = j == lines.Count - 1 && v == visualStarts.Count - 1;
@@ -713,7 +713,7 @@ public sealed class GuilFont : IDisposable {
             lastJ = j;
             lastLineLen = lineSpan.Length;
 
-            var visualStarts = getVisualLineStarts(lineSpan, position.X, wrapX, in ctx);
+            var visualStarts = GetVisualLineStarts(lineSpan, position.X, wrapX, in ctx);
 
             for (var v = 0; v < visualStarts.Count; v++) {
                 var isLast = isLastLogical && v == visualStarts.Count - 1;
@@ -779,7 +779,7 @@ public sealed class GuilFont : IDisposable {
                 break;
             }
 
-            var vs = getVisualLineStarts(lineSpan, position.X, wrapX, in ctx);
+            var vs = GetVisualLineStarts(lineSpan, position.X, wrapX, in ctx);
             currY += vs.Count * (height + ctx.LineSpacing);
 
             if (newlineIdx < 0) { targetLineSpan = lineSpan; break; }
@@ -787,7 +787,7 @@ public sealed class GuilFont : IDisposable {
             j++;
         }
 
-        var visualStarts = getVisualLineStarts(targetLineSpan, position.X, wrapX, in ctx);
+        var visualStarts = GetVisualLineStarts(targetLineSpan, position.X, wrapX, in ctx);
 
         var subLineIdx = 0;
         for (var v = 1; v < visualStarts.Count; v++) {
@@ -840,11 +840,11 @@ public sealed class GuilFont : IDisposable {
 
         for (var j = 0; j < index.ln; j++) {
             var s = CollectionsMarshal.AsSpan(lines[j]);
-            currY += getVisualLineStarts(s, position.X, wrapX, in ctx).Count * (height + ctx.LineSpacing);
+            currY += GetVisualLineStarts(s, position.X, wrapX, in ctx).Count * (height + ctx.LineSpacing);
         }
 
         var span = CollectionsMarshal.AsSpan(lines[index.ln]);
-        var visualStarts = getVisualLineStarts(span, position.X, wrapX, in ctx);
+        var visualStarts = GetVisualLineStarts(span, position.X, wrapX, in ctx);
 
         var subLineIdx = 0;
         for (var v = 1; v < visualStarts.Count; v++) {
@@ -891,7 +891,7 @@ public sealed class GuilFont : IDisposable {
 
         for (var j = 0; j < lines.Count; j++) {
             var span = CollectionsMarshal.AsSpan(lines[j]);
-            var vs = getVisualLineStarts(span, position.X, wrapX, in ctx);
+            var vs = GetVisualLineStarts(span, position.X, wrapX, in ctx);
 
             for (var v = 0; v < vs.Count; v++) {
                 var subStart = vs[v];

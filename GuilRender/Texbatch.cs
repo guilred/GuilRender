@@ -62,7 +62,7 @@ public class Texbatch {
     public void Begin(Matrix? view = null, Matrix? projection = null, BlendState? blendState = null, SamplerState? samplerState = null) {
         if (_begun) throw new InvalidOperationException("Texbatch is already begun.");
 
-        updateProjection(view, projection);
+        UpdateProjection(view, projection);
         _vertexCount = 0;
         _indexCount = 0;
         _currentBlendState = blendState ?? BlendState.AlphaBlend;
@@ -72,35 +72,35 @@ public class Texbatch {
     }
 
     public void SetTransform(Matrix? view = null, Matrix? projection = null) {
-        ensureBegun();
-        flush();
-        updateProjection(view, projection);
+        EnsureBegun();
+        Flush();
+        UpdateProjection(view, projection);
     }
 
     public void SetBlendState(BlendState blendState) {
-        ensureBegun();
+        EnsureBegun();
         if (_currentBlendState == blendState) return;
-        flush();
+        Flush();
         _currentBlendState = blendState;
     }
 
     public void SetSamplerState(SamplerState samplerState) {
-        ensureBegun();
-        flush();
+        EnsureBegun();
+        Flush();
         _currentSamplerState = samplerState;
     }
 
-    private void ensureBegun() {
+    private void EnsureBegun() {
         if (!_begun) throw new InvalidOperationException("Texbatch has not been begun.");
     }
 
     public void End() {
-        ensureBegun();
-        flush();
+        EnsureBegun();
+        Flush();
         _begun = false;
     }
 
-    private void flush() {
+    private void Flush() {
         if (_vertexCount == 0) return;
 
         _vertexBuffer.SetData(_vertices, 0, _vertexCount, SetDataOptions.Discard);
@@ -132,28 +132,28 @@ public class Texbatch {
         _indexCount = 0;
     }
 
-    private void updateProjection(Matrix? view, Matrix? projection) {
+    private void UpdateProjection(Matrix? view, Matrix? projection) {
         var currentView = view ?? Matrix.Identity;
         Matrix finalProj = currentView * (projection ?? Matrix.CreateOrthographicOffCenter(0, Graphics.Viewport.Width, Graphics.Viewport.Height, 0, 0f, 1f));
         _projectionParam.SetValue(finalProj);
     }
 
-    private void ensureCapacity(int verticesToAdd, int indicesToAdd) {
+    private void EnsureCapacity(int verticesToAdd, int indicesToAdd) {
         if (_vertexCount + verticesToAdd > MaxVertices || _indexCount + indicesToAdd > MaxIndices) {
-            flush();
+            Flush();
         }
     }
-    private void updateTexture(Texture2D texture) {
+    private void UpdateTexture(Texture2D texture) {
         if (_texture != texture) {
-            flush();
+            Flush();
             _texture = texture;
         }
     }
 
     public void Draw(Texture2D texture, RectangleF rect, Color? tint = null, Rotation rotation = default, Rectangle? sourceRect = null, SpriteEffects effects = SpriteEffects.None) {
-        ensureBegun();
-        updateTexture(texture);
-        ensureCapacity(4, 6);
+        EnsureBegun();
+        UpdateTexture(texture);
+        EnsureCapacity(4, 6);
 
         var actualTint = tint ?? Color.White;
         var (tl, tr, br, bl) = (rect.TL, rect.TR, rect.BR, rect.BL);

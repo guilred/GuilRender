@@ -73,7 +73,7 @@ public class GuilBatch {
     public void Begin(Matrix? view = null, Matrix? projection = null, BlendState? blendState = null, SamplerState? samplerState = null, float? clipSmoothing = null) {
         if (_begun) throw new InvalidOperationException("Guilbatch is already begun.");
 
-        updateProjection(view, projection);
+        UpdateProjection(view, projection);
         _clipSmoothingParam.SetValue(clipSmoothing ?? 0.5f);
         _vertexCount = 0;
         _indexCount = 0;
@@ -85,32 +85,32 @@ public class GuilBatch {
     }
 
     public void SetTransform(Matrix? view = null, Matrix? projection = null) {
-        ensureBegun();
-        flush();
-        updateProjection(view, projection);
+        EnsureBegun();
+        Flush();
+        UpdateProjection(view, projection);
     }
 
     public void SetBlendState(BlendState blendState) {
-        ensureBegun();
+        EnsureBegun();
         if (_currentBlendState == blendState) return;
-        flush();
+        Flush();
         _currentBlendState = blendState;
     }
 
     public void SetSamplerState(SamplerState samplerState) {
-        ensureBegun();
-        flush();
+        EnsureBegun();
+        Flush();
         _currentSamplerState = samplerState;
     }
 
-    private void ensureBegun() {
+    private void EnsureBegun() {
         if (!_begun) throw new InvalidOperationException("Guilbatch has not been begun.");
     }
 
     public void End(bool maintainClipRects = false) {
-        ensureBegun();
+        EnsureBegun();
 
-        flush();
+        Flush();
         _begun = false;
         if (!maintainClipRects) {
             _clipStack.Clear();
@@ -122,7 +122,7 @@ public class GuilBatch {
         }
     }
 
-    private void flush() {
+    private void Flush() {
         if (_vertexCount == 0) return;
 
         _vertexBuffer.SetData(_vertices, 0, _vertexCount, SetDataOptions.Discard);
@@ -160,16 +160,16 @@ public class GuilBatch {
         _textureCount = 0;
     }
 
-    private void updateProjection(Matrix? view, Matrix? projection) {
+    private void UpdateProjection(Matrix? view, Matrix? projection) {
         var currentView = view ?? Matrix.Identity;
         CameraZoom = new Vector3(currentView.M11, currentView.M12, currentView.M13).Length();
         Matrix finalProj = currentView * (projection ?? Matrix.CreateOrthographicOffCenter(0, Graphics.Viewport.Width, Graphics.Viewport.Height, 0, 0f, 1f));
         _projectionParam.SetValue(finalProj);
     }
 
-    private void ensureCapacity(int verticesToAdd, int indicesToAdd) {
+    private void EnsureCapacity(int verticesToAdd, int indicesToAdd) {
         if (_vertexCount + verticesToAdd > MaxVertices || _indexCount + indicesToAdd > MaxIndices) {
-            flush();
+            Flush();
         }
     }
 
@@ -222,24 +222,24 @@ public class GuilBatch {
             : new ClipState { Rect = new(0, 0, -1, 0), Params = Vector3.Zero };
     }
 
-    private int getTextureIndex(Texture2D texture) {
+    private int GetTextureIndex(Texture2D texture) {
         for (int i = 0; i < _textureCount; i++) {
             if (_textures[i] == texture) return i;
         }
 
         if (_textureCount >= MaxTextures) {
-            flush();
+            Flush();
         }
 
         _textures[_textureCount] = texture;
         return _textureCount++;
     }
 
-    private void addRingSegment(Vector2 center, float innerRadius, float outerRadius, float startAngle, float endAngle, Paint paint, int segments) {
+    private void AddRingSegment(Vector2 center, float innerRadius, float outerRadius, float startAngle, float endAngle, Paint paint, int segments) {
         if (segments < 1 || paint.IsTransparent() || innerRadius <= 0 && outerRadius <= 0) return;
 
         if (innerRadius <= 0.001f / CameraZoom) {
-            ensureCapacity(segments + 2, segments * 3);
+            EnsureCapacity(segments + 2, segments * 3);
             int startIdx = _vertexCount;
 
             _vertices[_vertexCount++] = new GuilVertex(new Vector3(center, 0), paint, _currentClip.Rect, _currentClip.Params);
@@ -259,7 +259,7 @@ public class GuilBatch {
             }
         }
         else {
-            ensureCapacity((segments + 1) * 2, segments * 6);
+            EnsureCapacity((segments + 1) * 2, segments * 6);
             int startIdx = _vertexCount;
 
             for (int i = 0; i <= segments; i++) {
@@ -288,9 +288,9 @@ public class GuilBatch {
         }
     }
 
-    private void addRectFringe(Span<Vector2> centers, float radius, int cornerSegments, Paint paint, bool outer, bool hasRotation, float rotSin, float rotCos, Vector2 pivot, float aaSize) {
+    private void AddRectFringe(Span<Vector2> centers, float radius, int cornerSegments, Paint paint, bool outer, bool hasRotation, float rotSin, float rotCos, Vector2 pivot, float aaSize) {
         int perimeterVerts = (cornerSegments + 1) * 4;
-        ensureCapacity(perimeterVerts * 2, perimeterVerts * 6);
+        EnsureCapacity(perimeterVerts * 2, perimeterVerts * 6);
 
         float step = MathHelper.PiOver2 / cornerSegments;
         int fringeStart = _vertexCount;
@@ -347,7 +347,7 @@ public class GuilBatch {
     }
 
     public void DrawRectangle(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, float rounding = 0, Rotation rotation = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
-        ensureBegun();
+        EnsureBegun();
         if (size.X <= 0 || size.Y <= 0) return;
 
         float minHalf = float.Min(size.X, size.Y) * 0.5f;
@@ -355,16 +355,16 @@ public class GuilBatch {
         borderThickness = float.Clamp(borderThickness, 0f, minHalf);
 
         var usedOrigin = rotation.Pivot ?? (position + size / 2);
-        borderPaint = transformPaint(borderPaint, usedOrigin, position - usedOrigin, rotation.Angle, size);
+        borderPaint = TransformPaint(borderPaint, usedOrigin, position - usedOrigin, rotation.Angle, size);
         var padding = Vector2.One * borderThickness;
-        fillPaint = transformPaint(fillPaint, usedOrigin, position + padding - usedOrigin, rotation.Angle, size - padding * 2);
+        fillPaint = TransformPaint(fillPaint, usedOrigin, position + padding - usedOrigin, rotation.Angle, size - padding * 2);
 
         bool hasFill = borderThickness < minHalf && !fillPaint.IsTransparent();
         bool hasBorder = borderThickness > 0f && !borderPaint.IsTransparent();
 
         if (!hasFill && !hasBorder) return;
 
-        var cornerSegments = rounding > 0 ? computeSegments(rounding, MathHelper.PiOver2, cornerQuality) : 1;
+        var cornerSegments = rounding > 0 ? ComputeSegments(rounding, MathHelper.PiOver2, cornerQuality) : 1;
         int perimVerts = (cornerSegments + 1) * 4;
         float arcStep = MathHelper.PiOver2 / cornerSegments;
 
@@ -404,7 +404,7 @@ public class GuilBatch {
         GuilVertex Vert(Vector2 p, Paint paint) => new(new Vector3(p, 0f), paint, _currentClip.Rect, _currentClip.Params);
 
         if (hasFill) {
-            ensureCapacity(perimVerts + 1, perimVerts * 3);
+            EnsureCapacity(perimVerts + 1, perimVerts * 3);
             int baseIdx = _vertexCount;
 
             _vertices[_vertexCount++] = Vert(Rotate(innerPos + innerSize * 0.5f), fillPaint);
@@ -425,7 +425,7 @@ public class GuilBatch {
         }
 
         if (hasBorder) {
-            ensureCapacity(perimVerts * 2, perimVerts * 6);
+            EnsureCapacity(perimVerts * 2, perimVerts * 6);
             int baseIdx = _vertexCount;
 
             for (int c = 0; c < 4; c++) {
@@ -462,12 +462,12 @@ public class GuilBatch {
         Vector2 aaPivot = usedOrigin;
 
         if (hasBorder) {
-            addRectFringe(outerCenters, outR, cornerSegments, borderPaint, true, hasRotation, rotSin, rotCos, aaPivot, aaSize);
-            addRectFringe(innerCenters, inR, cornerSegments, borderPaint, false, hasRotation, rotSin, rotCos, aaPivot, aaSize);
+            AddRectFringe(outerCenters, outR, cornerSegments, borderPaint, true, hasRotation, rotSin, rotCos, aaPivot, aaSize);
+            AddRectFringe(innerCenters, inR, cornerSegments, borderPaint, false, hasRotation, rotSin, rotCos, aaPivot, aaSize);
         }
         if (hasFill) {
             float borderA = hasBorder ? byte.Max(borderPaint.ColorA.A, borderPaint.ColorB.A) / 255f : 0;
-            addRectFringe(innerCenters, inR, cornerSegments, fillPaint * (1 - borderA), true, hasRotation, rotSin, rotCos, aaPivot, aaSize);
+            AddRectFringe(innerCenters, inR, cornerSegments, fillPaint * (1 - borderA), true, hasRotation, rotSin, rotCos, aaPivot, aaSize);
         }
     }
 
@@ -487,7 +487,7 @@ public class GuilBatch {
         => DrawRectangle(rect.Position, rect.Size, default, borderPaint, borderThickness, rounding, rotation, cornerQuality, aaSize);
 
     public void DrawLine(Vector2 start, Vector2 end, Paint fillPaint, Paint borderPaint, float thickness, float borderThickness, Rotation rotation = default, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f) {
-        ensureBegun();
+        EnsureBegun();
         if (thickness <= 0) return;
         if (rotation.Exists) {
             if (rotation.Pivot is not Vector2 pivot) {
@@ -506,9 +506,9 @@ public class GuilBatch {
         Vector2 position = start - origin;
 
         if (!fillPaint.isNormalized)
-            fillPaint = transformPaint(fillPaint, origin, Vector2.Zero, 0);
+            fillPaint = TransformPaint(fillPaint, origin, Vector2.Zero, 0);
         if (!borderPaint.isNormalized)
-            borderPaint = transformPaint(borderPaint, origin, Vector2.Zero, 0);
+            borderPaint = TransformPaint(borderPaint, origin, Vector2.Zero, 0);
 
         DrawRectangle(position, size, fillPaint, borderPaint, borderThickness, rounding: thickness * 0.5f, (angle, start), capQuality, aaSize);
     }
@@ -519,13 +519,13 @@ public class GuilBatch {
     public void BorderLine(Vector2 start, Vector2 end, Paint borderPaint, float thickness, float borderThickness, Rotation rotation = default, ArcQuality capQuality = ArcQuality.Normal, float aaSize = 1f)
         => DrawLine(start, end, default, borderPaint, thickness, borderThickness, rotation, capQuality, aaSize);
 
-    private void addCircleFringe(Vector2 center, float radius, float startAngle, float endAngle, Paint paint, int segments, bool outer, float aaSize) {
+    private void AddCircleFringe(Vector2 center, float radius, float startAngle, float endAngle, Paint paint, int segments, bool outer, float aaSize) {
         if (segments < 1 || radius <= 0f) return;
 
         float fringeRadius = outer ? radius + aaSize : float.Max(0f, radius - aaSize);
         if (!outer && fringeRadius >= radius) return;
 
-        ensureCapacity((segments + 1) * 2, segments * 6);
+        EnsureCapacity((segments + 1) * 2, segments * 6);
         int fringeStart = _vertexCount;
 
         for (int i = 0; i <= segments; i++) {
@@ -558,7 +558,7 @@ public class GuilBatch {
     }
 
     public void DrawArc(Vector2 center, Paint fillPaint, Paint borderPaint, float innerRadius, float outerRadius, float startAngle, float endAngle, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
-        ensureBegun();
+        EnsureBegun();
         if (rotation.Exists && rotation.Pivot is Vector2 pivot) {
             center.RotateAround(pivot, rotation.Angle);
             startAngle += rotation.Angle;
@@ -570,7 +570,7 @@ public class GuilBatch {
         endAngle = normalizeAngle(endAngle);
         if (endAngle <= startAngle) endAngle += float.Tau;
 
-        var segments = computeSegments(innerRadius + outerRadius, endAngle - startAngle, quality);
+        var segments = ComputeSegments(innerRadius + outerRadius, endAngle - startAngle, quality);
         if (outerRadius <= 0f || segments < 3) return;
 
         float outerEdge = innerRadius + outerRadius;
@@ -586,63 +586,63 @@ public class GuilBatch {
         if (!hasBorder && !hasFill) return;
 
         Vector2 size = Vector2.One * outerEdge * 2;
-        borderPaint = transformPaint(borderPaint, center, -Vector2.One * outerEdge, 0f, size);
+        borderPaint = TransformPaint(borderPaint, center, -Vector2.One * outerEdge, 0f, size);
         var padding = Vector2.One * borderThickness;
         size -= padding * 2;
-        fillPaint = transformPaint(fillPaint, center, -Vector2.One * outerEdge + padding, 0f, size);
+        fillPaint = TransformPaint(fillPaint, center, -Vector2.One * outerEdge + padding, 0f, size);
 
         Vector2 startCapCenter = center + new Vector2(float.Cos(startAngle), float.Sin(startAngle)) * midRadius;
         Vector2 endCapCenter = center + new Vector2(float.Cos(endAngle), float.Sin(endAngle)) * midRadius;
 
-        int capSegments = computeSegments(outerRadius / 2, float.Pi, quality);
+        int capSegments = ComputeSegments(outerRadius / 2, float.Pi, quality);
 
         if (hasBorder) {
-            addRingSegment(center, midRadius + fillHalfThick, midRadius + halfThick, startAngle, endAngle, borderPaint, segments);
-            addRingSegment(center, midRadius - halfThick, midRadius - fillHalfThick, startAngle, endAngle, borderPaint, segments);
-            addRingSegment(startCapCenter, fillHalfThick, halfThick, startAngle + float.Pi, startAngle + float.Tau, borderPaint, capSegments);
-            addRingSegment(endCapCenter, fillHalfThick, halfThick, endAngle, endAngle + float.Pi, borderPaint, capSegments);
+            AddRingSegment(center, midRadius + fillHalfThick, midRadius + halfThick, startAngle, endAngle, borderPaint, segments);
+            AddRingSegment(center, midRadius - halfThick, midRadius - fillHalfThick, startAngle, endAngle, borderPaint, segments);
+            AddRingSegment(startCapCenter, fillHalfThick, halfThick, startAngle + float.Pi, startAngle + float.Tau, borderPaint, capSegments);
+            AddRingSegment(endCapCenter, fillHalfThick, halfThick, endAngle, endAngle + float.Pi, borderPaint, capSegments);
         }
         if (hasFill) {
-            addRingSegment(center, midRadius - fillHalfThick, midRadius + fillHalfThick, startAngle, endAngle, fillPaint, segments);
-            addRingSegment(startCapCenter, 0f, fillHalfThick, startAngle + float.Pi, startAngle + float.Tau, fillPaint, capSegments);
-            addRingSegment(endCapCenter, 0f, fillHalfThick, endAngle, endAngle + float.Pi, fillPaint, capSegments);
+            AddRingSegment(center, midRadius - fillHalfThick, midRadius + fillHalfThick, startAngle, endAngle, fillPaint, segments);
+            AddRingSegment(startCapCenter, 0f, fillHalfThick, startAngle + float.Pi, startAngle + float.Tau, fillPaint, capSegments);
+            AddRingSegment(endCapCenter, 0f, fillHalfThick, endAngle, endAngle + float.Pi, fillPaint, capSegments);
         }
 
         if (aaSize == 0f) return;
         aaSize /= CameraZoom;
 
         if (hasBorder) {
-            addCircleFringe(center, midRadius + halfThick, startAngle, endAngle, borderPaint, segments, true, aaSize);
-            addCircleFringe(center, midRadius - halfThick, startAngle, endAngle, borderPaint, segments, false, aaSize);
-            addCircleFringe(center, midRadius - fillHalfThick, startAngle, endAngle, borderPaint, segments, true, aaSize);
-            addCircleFringe(center, midRadius + fillHalfThick, startAngle, endAngle, borderPaint, segments, false, aaSize);
+            AddCircleFringe(center, midRadius + halfThick, startAngle, endAngle, borderPaint, segments, true, aaSize);
+            AddCircleFringe(center, midRadius - halfThick, startAngle, endAngle, borderPaint, segments, false, aaSize);
+            AddCircleFringe(center, midRadius - fillHalfThick, startAngle, endAngle, borderPaint, segments, true, aaSize);
+            AddCircleFringe(center, midRadius + fillHalfThick, startAngle, endAngle, borderPaint, segments, false, aaSize);
 
             float arcSpan = endAngle - startAngle;
 
-            float inSpan = arcSpan > float.Pi ? (arcSpanAngle(startCapCenter, endCapCenter, fillHalfThick) ?? 0) / 2 : 0;
+            float inSpan = arcSpan > float.Pi ? (ArcSpanAngle(startCapCenter, endCapCenter, fillHalfThick) ?? 0) / 2 : 0;
             if (inSpan != float.Pi) {
-                addCircleFringe(startCapCenter, fillHalfThick, startAngle + float.Pi, startAngle + float.Pi * 1.5f - inSpan, borderPaint, capSegments, false, aaSize);
-                addCircleFringe(startCapCenter, fillHalfThick, startAngle + float.Pi * 1.5f + inSpan, startAngle + float.Tau, borderPaint, capSegments, false, aaSize);
-                addCircleFringe(endCapCenter, fillHalfThick, endAngle, endAngle + float.Pi / 2 - inSpan, borderPaint, capSegments, false, aaSize);
-                addCircleFringe(endCapCenter, fillHalfThick, endAngle + float.Pi, endAngle + float.Pi / 2 + inSpan, borderPaint, capSegments, false, aaSize);
+                AddCircleFringe(startCapCenter, fillHalfThick, startAngle + float.Pi, startAngle + float.Pi * 1.5f - inSpan, borderPaint, capSegments, false, aaSize);
+                AddCircleFringe(startCapCenter, fillHalfThick, startAngle + float.Pi * 1.5f + inSpan, startAngle + float.Tau, borderPaint, capSegments, false, aaSize);
+                AddCircleFringe(endCapCenter, fillHalfThick, endAngle, endAngle + float.Pi / 2 - inSpan, borderPaint, capSegments, false, aaSize);
+                AddCircleFringe(endCapCenter, fillHalfThick, endAngle + float.Pi, endAngle + float.Pi / 2 + inSpan, borderPaint, capSegments, false, aaSize);
             }
 
-            float outSpan = arcSpan > float.Pi ? (arcSpanAngle(startCapCenter, endCapCenter, halfThick) ?? 0) / 2 : 0;
+            float outSpan = arcSpan > float.Pi ? (ArcSpanAngle(startCapCenter, endCapCenter, halfThick) ?? 0) / 2 : 0;
             if (outSpan != float.Pi) {
                 halfThick -= 0.5f;
-                addCircleFringe(startCapCenter, halfThick, startAngle + float.Pi, startAngle + float.Pi * 1.5f - outSpan, borderPaint, capSegments, true, aaSize);
-                addCircleFringe(startCapCenter, halfThick, startAngle + float.Pi * 1.5f + outSpan, startAngle + float.Tau, borderPaint, capSegments, true, aaSize);
-                addCircleFringe(endCapCenter, halfThick, endAngle, endAngle + float.Pi / 2 - outSpan, borderPaint, capSegments, true, aaSize);
-                addCircleFringe(endCapCenter, halfThick, endAngle + float.Pi, endAngle + float.Pi / 2 + outSpan, borderPaint, capSegments, true, aaSize);
+                AddCircleFringe(startCapCenter, halfThick, startAngle + float.Pi, startAngle + float.Pi * 1.5f - outSpan, borderPaint, capSegments, true, aaSize);
+                AddCircleFringe(startCapCenter, halfThick, startAngle + float.Pi * 1.5f + outSpan, startAngle + float.Tau, borderPaint, capSegments, true, aaSize);
+                AddCircleFringe(endCapCenter, halfThick, endAngle, endAngle + float.Pi / 2 - outSpan, borderPaint, capSegments, true, aaSize);
+                AddCircleFringe(endCapCenter, halfThick, endAngle + float.Pi, endAngle + float.Pi / 2 + outSpan, borderPaint, capSegments, true, aaSize);
             }
         }
         if (hasFill) {
             float borderA = hasBorder ? byte.Max(borderPaint.ColorA.A, borderPaint.ColorB.A) / 255f : 0;
             var scaledFill = fillPaint * (1 - borderA);
-            addCircleFringe(center, midRadius + fillHalfThick, startAngle, endAngle, scaledFill, segments, true, aaSize);
-            addCircleFringe(center, midRadius - fillHalfThick, startAngle, endAngle, scaledFill, segments, false, aaSize);
-            addCircleFringe(startCapCenter, fillHalfThick, startAngle + float.Pi, startAngle + float.Tau, scaledFill, capSegments, true, aaSize);
-            addCircleFringe(endCapCenter, fillHalfThick, endAngle, endAngle + float.Pi, scaledFill, capSegments, true, aaSize);
+            AddCircleFringe(center, midRadius + fillHalfThick, startAngle, endAngle, scaledFill, segments, true, aaSize);
+            AddCircleFringe(center, midRadius - fillHalfThick, startAngle, endAngle, scaledFill, segments, false, aaSize);
+            AddCircleFringe(startCapCenter, fillHalfThick, startAngle + float.Pi, startAngle + float.Tau, scaledFill, capSegments, true, aaSize);
+            AddCircleFringe(endCapCenter, fillHalfThick, endAngle, endAngle + float.Pi, scaledFill, capSegments, true, aaSize);
         }
     }
 
@@ -653,10 +653,10 @@ public class GuilBatch {
         => DrawArc(center, default, borderPaint, innerRadius, outerRadius, startAngle, endAngle, borderThickness, rotation, quality, aaSize);
 
     public void DrawCircle(Vector2 center, Paint fillPaint, Paint borderPaint, float radius, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
-        ensureBegun();
+        EnsureBegun();
         if (rotation.Exists && rotation.Pivot is Vector2 pivot)
             center.RotateAround(pivot, rotation.Angle);
-        var segments = computeSegments(radius, quality: quality);
+        var segments = ComputeSegments(radius, quality: quality);
         float innerRadius = float.Max(0, radius - borderThickness);
 
         bool hasBorder = borderThickness > 0 && !borderPaint.IsTransparent();
@@ -664,26 +664,26 @@ public class GuilBatch {
 
         Vector2 size = Vector2.One * radius * 2;
         if (hasBorder) {
-            borderPaint = transformPaint(borderPaint, center, -Vector2.One * radius, 0f, size);
-            addRingSegment(center, innerRadius, radius, 0, float.Tau, borderPaint, segments);
+            borderPaint = TransformPaint(borderPaint, center, -Vector2.One * radius, 0f, size);
+            AddRingSegment(center, innerRadius, radius, 0, float.Tau, borderPaint, segments);
         }
         if (innerRadius > 0) {
             var padding = Vector2.One * borderThickness;
             size -= padding * 2;
-            fillPaint = transformPaint(fillPaint, center, -Vector2.One * radius + padding, 0f, size);
-            addRingSegment(center, innerRadius, 0, 0, float.Tau, fillPaint, segments);
+            fillPaint = TransformPaint(fillPaint, center, -Vector2.One * radius + padding, 0f, size);
+            AddRingSegment(center, innerRadius, 0, 0, float.Tau, fillPaint, segments);
         }
 
         if (aaSize == 0f) return;
         aaSize /= CameraZoom;
 
         if (hasBorder) {
-            addCircleFringe(center, radius, 0, float.Tau, borderPaint, segments, true, aaSize);
-            addCircleFringe(center, innerRadius, 0, float.Tau, borderPaint, segments, false, aaSize);
+            AddCircleFringe(center, radius, 0, float.Tau, borderPaint, segments, true, aaSize);
+            AddCircleFringe(center, innerRadius, 0, float.Tau, borderPaint, segments, false, aaSize);
         }
         if (hasFill) {
             float borderA = hasBorder ? byte.Max(borderPaint.ColorA.A, borderPaint.ColorB.A) / 255f : 0;
-            addCircleFringe(center, innerRadius, 0, float.Tau, fillPaint * (1 - borderA), segments, true, aaSize);
+            AddCircleFringe(center, innerRadius, 0, float.Tau, fillPaint * (1 - borderA), segments, true, aaSize);
         }
     }
 
@@ -694,7 +694,7 @@ public class GuilBatch {
         => DrawCircle(center, default, borderPaint, radius, borderThickness, rotation, quality, aaSize);
 
     public void DrawNGon(Vector2 center, float radius, Paint fillPaint, Paint borderPaint, int sides, float borderThickness, Rotation rotation = default, float aaSize = 1f) {
-        ensureBegun();
+        EnsureBegun();
         if (sides < 3 || radius <= 0f) return;
 
         float innerRadius = float.Max(0, radius - borderThickness);
@@ -708,26 +708,26 @@ public class GuilBatch {
         Vector2 worldPivot = rotation.Pivot ?? center;
 
         if (hasBorder) {
-            borderPaint = transformPaint(borderPaint, worldPivot, center - Vector2.One * radius - worldPivot, rotAngle, size);
-            addRingSegment(center, innerRadius, radius, rotAngle, rotAngle + float.Tau, borderPaint, sides);
+            borderPaint = TransformPaint(borderPaint, worldPivot, center - Vector2.One * radius - worldPivot, rotAngle, size);
+            AddRingSegment(center, innerRadius, radius, rotAngle, rotAngle + float.Tau, borderPaint, sides);
         }
         if (hasFill) {
             var padding = Vector2.One * borderThickness;
             size -= padding * 2;
-            fillPaint = transformPaint(fillPaint, worldPivot, center - Vector2.One * radius + padding - worldPivot, rotAngle, size);
-            addRingSegment(center, 0, innerRadius, rotAngle, rotAngle + float.Tau, fillPaint, sides);
+            fillPaint = TransformPaint(fillPaint, worldPivot, center - Vector2.One * radius + padding - worldPivot, rotAngle, size);
+            AddRingSegment(center, 0, innerRadius, rotAngle, rotAngle + float.Tau, fillPaint, sides);
         }
 
         if (aaSize == 0f) return;
         aaSize /= CameraZoom;
 
         if (hasBorder) {
-            addCircleFringe(center, radius, rotAngle, rotAngle + float.Tau, borderPaint, sides, true, aaSize);
-            addCircleFringe(center, innerRadius, rotAngle, rotAngle + float.Tau, borderPaint, sides, false, aaSize);
+            AddCircleFringe(center, radius, rotAngle, rotAngle + float.Tau, borderPaint, sides, true, aaSize);
+            AddCircleFringe(center, innerRadius, rotAngle, rotAngle + float.Tau, borderPaint, sides, false, aaSize);
         }
         if (hasFill) {
             float borderA = hasBorder ? byte.Max(borderPaint.ColorA.A, borderPaint.ColorB.A) / 255f : 0;
-            addCircleFringe(center, innerRadius, rotAngle, rotAngle + float.Tau, fillPaint * (1 - borderA), sides, true, aaSize);
+            AddCircleFringe(center, innerRadius, rotAngle, rotAngle + float.Tau, fillPaint * (1 - borderA), sides, true, aaSize);
         }
     }
 
@@ -738,7 +738,7 @@ public class GuilBatch {
         => DrawNGon(center, radius, default, borderPaint, sides, borderThickness, rotation, aaSize);
 
     public void DrawEllipse(Vector2 position, Vector2 size, Paint fillPaint, Paint borderPaint, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f) {
-        ensureBegun();
+        EnsureBegun();
         if (size.X <= 0 || size.Y <= 0) return;
 
         float rx = size.X * 0.5f;
@@ -747,16 +747,16 @@ public class GuilBatch {
         borderThickness = float.Clamp(borderThickness, 0f, minHalf);
 
         Vector2 usedOrigin = rotation.Pivot ?? (position + size / 2);
-        borderPaint = transformPaint(borderPaint, usedOrigin, position - usedOrigin, rotation.Angle, size);
+        borderPaint = TransformPaint(borderPaint, usedOrigin, position - usedOrigin, rotation.Angle, size);
         var padding = Vector2.One * borderThickness;
-        fillPaint = transformPaint(fillPaint, usedOrigin, position + padding - usedOrigin, rotation.Angle, size - padding * 2);
+        fillPaint = TransformPaint(fillPaint, usedOrigin, position + padding - usedOrigin, rotation.Angle, size - padding * 2);
 
         bool hasFill = borderThickness < minHalf && !fillPaint.IsTransparent();
         bool hasBorder = borderThickness > 0f && !borderPaint.IsTransparent();
 
         if (!hasFill && !hasBorder) return;
 
-        int segments = computeSegments(float.Max(rx, ry), float.Tau, quality);
+        int segments = ComputeSegments(float.Max(rx, ry), float.Tau, quality);
 
         float innerRx = float.Max(0f, rx - borderThickness);
         float innerRy = float.Max(0f, ry - borderThickness);
@@ -782,7 +782,7 @@ public class GuilBatch {
         };
 
         if (hasFill) {
-            ensureCapacity(segments + 2, segments * 3);
+            EnsureCapacity(segments + 2, segments * 3);
             int baseIdx = _vertexCount;
 
             _vertices[_vertexCount++] = Vert(Rotate(center), fillPaint);
@@ -803,7 +803,7 @@ public class GuilBatch {
 
         if (hasBorder) {
             int borderVerts = (segments + 1) * 2;
-            ensureCapacity(borderVerts, segments * 6);
+            EnsureCapacity(borderVerts, segments * 6);
             int baseIdx = _vertexCount;
 
             for (int i = 0; i <= segments; i++) {
@@ -839,7 +839,7 @@ public class GuilBatch {
             if (segments < 1 || erx <= 0f || ery <= 0f) return;
 
             int fringeVerts = (segments + 1) * 2;
-            ensureCapacity(fringeVerts, segments * 6);
+            EnsureCapacity(fringeVerts, segments * 6);
             int fringeStart = _vertexCount;
 
             Paint fringePaint = paint;
@@ -930,7 +930,7 @@ public class GuilBatch {
     public void BorderEllipse(Vector2 center, float xRadius, float yRadius, Paint borderPaint, float borderThickness, Rotation rotation = default, ArcQuality quality = ArcQuality.Normal, float aaSize = 1f)
         => DrawEllipse(center, xRadius, yRadius, default, borderPaint, borderThickness, rotation, quality, aaSize);
 
-    private static Paint transformPaint(Paint paint, Vector2 center, Vector2 offset, float rotation, Vector2? size = null) {
+    private static Paint TransformPaint(Paint paint, Vector2 center, Vector2 offset, float rotation, Vector2? size = null) {
         if (paint.isNormalized && size.HasValue) {
             var r = size.Value;
             paint.Start = new Vector2(paint.Start.X * r.X, paint.Start.Y * r.Y);
@@ -970,16 +970,16 @@ public class GuilBatch {
         return paint;
     }
 
-    private static float? arcSpanAngle(Vector2 c1, Vector2 c2, float r) {
+    private static float? ArcSpanAngle(Vector2 c1, Vector2 c2, float r) {
         float d = Vector2.Distance(c1, c2);
         if (d >= 2f * r) return null;
         if (d < float.Epsilon) return float.Pi;
         return 2f * float.Acos(d / (2f * r));
     }
 
-    private void addTextureFringe(Span<Vector2> centers, float radius, int cornerSegments, Paint paint, bool hasRotation, float rotSin, float rotCos, Vector2 pivot, int texIndex, Vector2 position, Vector2 actualSize, Vector2 uvMin, Vector2 uvMax, bool flipH, bool flipV, float aaSize) {
+    private void AddTextureFringe(Span<Vector2> centers, float radius, int cornerSegments, Paint paint, bool hasRotation, float rotSin, float rotCos, Vector2 pivot, int texIndex, Vector2 position, Vector2 actualSize, Vector2 uvMin, Vector2 uvMax, bool flipH, bool flipV, float aaSize) {
         int perimeterVerts = (cornerSegments + 1) * 4;
-        ensureCapacity(perimeterVerts * 2, perimeterVerts * 6);
+        EnsureCapacity(perimeterVerts * 2, perimeterVerts * 6);
 
         float step = MathHelper.PiOver2 / cornerSegments;
         int fringeStart = _vertexCount;
@@ -1047,23 +1047,23 @@ public class GuilBatch {
     }
 
     public void DrawTexture(Texture2D texture, Vector2 position, Vector2? size = null, RectangleF? sourceRect = null, Paint? tint = null, Rotation rotation = default, float rounding = 0f, SpriteEffects effects = SpriteEffects.None, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
-        ensureBegun();
+        EnsureBegun();
         Vector2 actualSize = size ?? new Vector2(texture.Width, texture.Height);
         if (actualSize.X <= 0 || actualSize.Y <= 0) return;
 
         Paint actualTint = tint ?? Paint.Solid(Color.White);
         if (actualTint.IsTransparent()) return;
         var usedOrigin = rotation.Pivot ?? (position + actualSize / 2);
-        actualTint = transformPaint(actualTint, usedOrigin, position - usedOrigin, rotation.Angle, size);
+        actualTint = TransformPaint(actualTint, usedOrigin, position - usedOrigin, rotation.Angle, size);
 
         float minHalf = float.Min(actualSize.X, actualSize.Y) * 0.5f;
         rounding = float.Clamp(rounding, 0, minHalf);
 
-        var cornerSegments = rounding > 0 ? computeSegments(rounding, MathHelper.PiOver2, cornerQuality) : 1;
+        var cornerSegments = rounding > 0 ? ComputeSegments(rounding, MathHelper.PiOver2, cornerQuality) : 1;
 
         int perimeterVerts = (cornerSegments + 1) * 4;
-        ensureCapacity(perimeterVerts + 1, perimeterVerts * 3);
-        int texIndex = getTextureIndex(texture);
+        EnsureCapacity(perimeterVerts + 1, perimeterVerts * 3);
+        int texIndex = GetTextureIndex(texture);
 
         float outR = rounding;
         Span<Vector2> outCenters = [
@@ -1145,7 +1145,7 @@ public class GuilBatch {
         if (rounding > 0 && aaSize != 0f) {
             aaSize /= CameraZoom;
             Vector2 aaPivot = usedOrigin;
-            addTextureFringe(outCenters, outR, cornerSegments, actualTint, hasRotation, rotSin, rotCos, aaPivot, texIndex, position, actualSize, uvMin, uvMax, flipH, flipV, aaSize);
+            AddTextureFringe(outCenters, outR, cornerSegments, actualTint, hasRotation, rotSin, rotCos, aaPivot, texIndex, position, actualSize, uvMin, uvMax, flipH, flipV, aaSize);
         }
     }
     public void DrawTexture(Texture2D texture, RectangleF destinationRectangle, Paint paint, float rounding = 0f, Rotation rotation = default, ArcQuality cornerQuality = ArcQuality.Normal, float aaSize = 1f) {
@@ -1170,8 +1170,8 @@ public class GuilBatch {
         DrawTexture(texture, destinationRectangle.Position, destinationRectangle.Size, sourceRectangle, paint, rotation, rounding, effects, cornerQuality, aaSize);
     }
     public void DrawQuad(GuilVertex v0, GuilVertex v1, GuilVertex v2, GuilVertex v3) {
-        ensureBegun();
-        ensureCapacity(4, 6);
+        EnsureBegun();
+        EnsureCapacity(4, 6);
 
         int startIdx = _vertexCount;
 
@@ -1195,9 +1195,9 @@ public class GuilBatch {
     }
 
     public void DrawQuad(Texture2D texture, GuilVertex v0, GuilVertex v1, GuilVertex v2, GuilVertex v3) {
-        ensureBegun();
-        int texIndex = getTextureIndex(texture);
-        ensureCapacity(4, 6);
+        EnsureBegun();
+        int texIndex = GetTextureIndex(texture);
+        EnsureCapacity(4, 6);
 
         int startIdx = _vertexCount;
 
@@ -1226,18 +1226,18 @@ public class GuilBatch {
         _indices[_indexCount++] = (short)(startIdx + 2);
         _indices[_indexCount++] = (short)(startIdx + 3);
     }
-    private static float qualityToError(ArcQuality quality) => quality switch {
+    private static float QualityToError(ArcQuality quality) => quality switch {
         ArcQuality.Low => 1.0f,
         ArcQuality.Normal => 0.125f,
         ArcQuality.High => 0.0625f,
         _ => 0.5f
     };
 
-    public int computeSegments(float radius, float angleSpanRadians = float.Tau, ArcQuality quality = ArcQuality.Normal, int minSegments = 3) {
+    public int ComputeSegments(float radius, float angleSpanRadians = float.Tau, ArcQuality quality = ArcQuality.Normal, int minSegments = 3) {
         var pixelRadius = radius * CameraZoom;
         if (pixelRadius <= 0f) return minSegments;
 
-        float clampedError = float.Min(qualityToError(quality), pixelRadius);
+        float clampedError = float.Min(QualityToError(quality), pixelRadius);
         int segments = (int)float.Ceiling(float.Pi / float.Acos(1.0f - clampedError / pixelRadius) * (float.Abs(angleSpanRadians) / float.Tau));
 
         return int.Max(segments, minSegments);
