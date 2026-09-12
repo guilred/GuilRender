@@ -188,7 +188,7 @@ public sealed class GuilFont : IDisposable {
         }
         if (c == '\t') {
             return ctx.LargestAtlas.CharsData.TryGetValue('$', out var dlr)
-                ? 4 * dlr.w * ctx.LAtlasScale + ctx.Spacing
+                ? 4 * dlr.w * ctx.LAtlasScale + ctx.Spacing * 4
                 : ctx.Spacing * 5;
         }
         if (ctx.LargestAtlas.CharsData.TryGetValue(c, out var offset) || ctx.LargestAtlas.CharsData.TryGetValue('?', out offset)) {
