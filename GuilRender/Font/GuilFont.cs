@@ -24,7 +24,9 @@ public sealed class GuilFont : IDisposable {
     public float LineSpacing { get; set; } = 5;
 
     public GuilFont(GraphicsDevice graphics, GuilBatch batch, string guifFilePath, GraphicsProfile profile = GraphicsProfile.Reach) {
-        using var archive = ZipFile.OpenRead(guifFilePath);
+        using var fileStream = TitleContainer.OpenStream(guifFilePath);
+
+        using var archive = new ZipArchive(fileStream, ZipArchiveMode.Read);
 
         string? readEntryText(string entryName) {
             var entry = archive.GetEntry(entryName);
