@@ -8,13 +8,14 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Guilred.Rendering;
 
-public class Texbatch {
+public class Texbatch : IDisposable {
     private const int MaxVertices = 8192;
     private const int MaxIndices = MaxVertices * 3;
 
     public readonly GraphicsDevice Graphics;
 
     private readonly Effect _effect;
+    private readonly bool _ownsEffect;
     private readonly EffectPass _pass;
     private readonly EffectParameter _projectionParam;
     private BlendState _currentBlendState = BlendState.AlphaBlend;
@@ -50,6 +51,7 @@ public class Texbatch {
             byte[] bytecode = new byte[stream.Length];
             stream.ReadExactly(bytecode, 0, (int)stream.Length);
             _effect = new Effect(Graphics, bytecode);
+            _ownsEffect = true;
         }
 
         _pass = _effect.Techniques[0].Passes[0];
@@ -219,5 +221,14 @@ public class Texbatch {
         );
 
         readonly VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;
+    }
+    public void Dispose() {
+        if (_ownsEffect)
+            _effect.Dispose();
+
+        _vertexBuffer.Dispose();
+        _indexBuffer.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }

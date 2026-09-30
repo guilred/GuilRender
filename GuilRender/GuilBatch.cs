@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using FontStashSharp;
 using Guilred.Shapes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -9,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Guilred.Rendering;
 
-public class GuilBatch {
+public class GuilBatch : IDisposable {
     private const int MaxVertices = 8192;
     private const int MaxIndices = MaxVertices * 3;
     private const int MaxTextures = 16;
@@ -17,6 +16,7 @@ public class GuilBatch {
     public readonly GraphicsDevice Graphics;
 
     private readonly Effect _effect;
+    private readonly bool _ownsEffect;
     private readonly EffectPass _pass;
     private readonly EffectParameter _projectionParam;
     private readonly EffectParameter _clipSmoothingParam;
@@ -58,6 +58,7 @@ public class GuilBatch {
             byte[] bytecode = new byte[stream.Length];
             stream.ReadExactly(bytecode, 0, (int)stream.Length);
             _effect = new Effect(Graphics, bytecode);
+            _ownsEffect = true;
         }
 
         _pass = _effect.Techniques[0].Passes[0];
@@ -1241,6 +1242,15 @@ public class GuilBatch {
         int segments = (int)float.Ceiling(float.Pi / float.Acos(1.0f - clampedError / pixelRadius) * (float.Abs(angleSpanRadians) / float.Tau));
 
         return int.Max(segments, minSegments);
+    }
+    public void Dispose() {
+        if (_ownsEffect)
+            _effect.Dispose();
+
+        _vertexBuffer.Dispose();
+        _indexBuffer.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }
 
