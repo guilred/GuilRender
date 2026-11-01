@@ -222,29 +222,6 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
 
     public void Inflate(Vector2 amount) => Inflate(amount.X, amount.Y);
 
-    public void Scale(float scale) {
-        if (scale == 1f) return;
-        Vector2 center = Center;
-        float newWidth = Width * scale;
-        float newHeight = Height * scale;
-
-        X = center.X - newWidth / 2.0f;
-        Y = center.Y - newHeight / 2.0f;
-        Width = newWidth;
-        Height = newHeight;
-    }
-
-    public void Scale(Vector2 scale) {
-        if (scale == Vector2.One) return;
-        Vector2 center = Center;
-        float newWidth = Width * scale.X;
-        float newHeight = Height * scale.Y;
-
-        X = center.X - newWidth / 2.0f;
-        Y = center.Y - newHeight / 2.0f;
-        Width = newWidth;
-        Height = newHeight;
-    }
 
     public void Scale(float scale, Vector2 origin) {
         if (scale == 1f) return;
@@ -268,6 +245,9 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
         Width *= scaleX;
         Height *= scaleY;
     }
+    public void Scale(float scale) => Scale(scale, Center);
+    public void Scale(Vector2 scale) => Scale(scale, Center);
+    public void Scale(float scaleX, float scaleY) => Scale(scaleX, scaleY, Center);
 
     public void FitAndCenter(float aspectRatio) {
         FitAndAlign(aspectRatio, Anchor.Center);
@@ -437,6 +417,7 @@ public struct RectangleF(float x, float y, float width, float height) : IEquatab
     }
 
     public static implicit operator RectangleF(Rectangle rect) => FromRectangle(rect);
+    public static implicit operator Rectangle(RectangleF rect) => rect.ToRectangle();
     #endregion
 
     #region Equality & Standard Overrides
