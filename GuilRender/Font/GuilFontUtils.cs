@@ -2,10 +2,27 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using static Guilred.Rendering.GuilFont;
 
 namespace Guilred.Rendering;
 
 internal static class GuilFontUtils {
+	internal static float GetCharWidth(char c, in FontContext ctx) {
+		if (c == ' ') {
+			return ctx.LargestAtlas.CharsData.TryGetValue('$', out var dlr)
+				? dlr.w * ctx.LAtlasScale + ctx.Spacing
+				: ctx.Spacing * 2;
+		}
+		if (c == '\t') {
+			return ctx.LargestAtlas.CharsData.TryGetValue('$', out var dlr)
+				? 4 * dlr.w * ctx.LAtlasScale + ctx.Spacing * 4
+				: ctx.Spacing * 5;
+		}
+		if (ctx.LargestAtlas.CharsData.TryGetValue(c, out var offset) || ctx.LargestAtlas.CharsData.TryGetValue('?', out offset)) {
+			return offset.w * ctx.LAtlasScale + ctx.Spacing;
+		}
+		return 0;
+	}
 	public static Vector2 ApplyAlignment(
 		ref float posX,
 		ref float posY,
@@ -80,7 +97,7 @@ internal static class GuilFontUtils {
 		for (var k = startIndex; k < segment.Length; k++) {
 			var wc = segment[k];
 			if (wc == ' ' || wc == '\n') break;
-			wordWidth += GuilFont.GetCharWidth(wc, in ctx);
+			wordWidth += GetCharWidth(wc, in ctx);
 		}
 		return wordWidth;
 	}
@@ -104,7 +121,7 @@ internal static class GuilFontUtils {
 
 		for (var i = 0; i < line.Length; i++) {
 			var c = line[i];
-			var charWidth = GuilFont.GetCharWidth(c, in ctx);
+			var charWidth = GetCharWidth(c, in ctx);
 
 			if (c == ' ' || c == '\t') {
 				currX += charWidth;
